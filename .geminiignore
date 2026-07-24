@@ -1,27 +1,40 @@
-# Ignore Visual Studio & Rider folders
+# IDE & Tooling Caches
 .vs/
 .idea/
 .vscode/
 
-# Ignore compiled folders
-[Bb]in/
-[Oo]bj/
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
+# Build Results & Compiled Binaries
+**/[Bb]in/
+**/[Oo]bj/
+**/[Dd]ebug/
+**/[Rr]elease/
+**/x64/
+**/x86/
 
-# Ignore database and large data files
+# Databases, Lock Files & Archives
 *.mdb
+*.accdb
 *.ldb
 *.laccdb
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
 *.csv
+*.tsv
 *.zip
+*.rar
+*.7z
 
-# Ignore user upload directories
+# Runtime Uploads & Log Directories
 **/UploadedFiles/
 **/wwwroot/UploadedImages/
+**/[Ll]og/
+**/[Ll]ogs/
 
-# Ignore packages and node modules
-**/packages/
+# Dependencies & Temporary Files
 **/node_modules/
+**/packages/
+*.tmp
+*.bak

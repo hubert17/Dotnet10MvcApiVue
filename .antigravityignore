@@ -1,14 +1,40 @@
-# Ignore compiled folders locally
-[Bb]in/
-[Oo]bj/
+# IDE & Tooling Caches
+.vs/
+.idea/
+.vscode/
 
-# Ignore database and CSV logs locally
-App_Data/*.mdb
-App_Data/*.ldb
-App_Data/*.laccdb
-App_Data/*.csv
-App_Data/*.zip
+# Build Results & Compiled Binaries
+**/[Bb]in/
+**/[Oo]bj/
+**/[Dd]ebug/
+**/[Rr]elease/
+**/x64/
+**/x86/
 
-# Ignore user uploads locally
-UploadedFiles/
-wwwroot/UploadedImages/
+# Databases, Lock Files & Archives
+*.mdb
+*.accdb
+*.ldb
+*.laccdb
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.csv
+*.tsv
+*.zip
+*.rar
+*.7z
+
+# Runtime Uploads & Log Directories
+**/UploadedFiles/
+**/wwwroot/UploadedImages/
+**/[Ll]og/
+**/[Ll]ogs/
+
+# Dependencies & Temporary Files
+**/node_modules/
+**/packages/
+*.tmp
+*.bak
