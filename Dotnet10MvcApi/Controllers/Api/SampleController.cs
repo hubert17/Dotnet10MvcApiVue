@@ -43,7 +43,7 @@ namespace Dotnet10MvcApi.Controllers.Api
                 // Fallback to local server date
                 dbServerDate = DateTime.Now;
             }
-            
+
             return Ok(new { awaken = true, dbServerDate });
         }
 
@@ -65,7 +65,7 @@ namespace Dotnet10MvcApi.Controllers.Api
                 Name = "Ariel",
                 Price = 7.50M
             };
-            
+
             return Ok(product);
         }
 
@@ -90,9 +90,11 @@ namespace Dotnet10MvcApi.Controllers.Api
                         {
                             await file.CopyToAsync(stream);
                         }
+
                         docfiles.Add(file.FileName);
                     }
                 }
+
                 return Ok(new { docfiles });
             }
 
@@ -115,6 +117,7 @@ namespace Dotnet10MvcApi.Controllers.Api
                 {
                     await file.CopyToAsync(stream);
                 }
+
                 return Ok(filePath);
             }
 
@@ -127,7 +130,7 @@ namespace Dotnet10MvcApi.Controllers.Api
             var success = EmailService.SendEmail(EmailTo, Subject, Message);
             if (success)
                 return Ok("Successfully sent.");
-            
+
             return BadRequest("Sending failed.");
         }
     }

@@ -74,5 +74,19 @@ These instructions govern all future modifications, tests, and task executions p
     *   **Razor Escaping:** In Razor `.cshtml` files, remember to escape any `@` symbols in npm package CDN URLs (e.g., `https://cdn.jsdelivr.net/npm/@@fortawesome/fontawesome-free@5.15.4/css/all.min.css`).
     *   **Application Custom Styles:** Application-specific custom stylesheets (such as `Site.css` and `Account.css`) remain local in `wwwroot/css/`.
 
+---
 
+## 🏗️ Multi-Paradigm Single-Project Architecture
 
+*   **Unified Monolith Design:** This project is a single-project "one-stop shop" that hosts 4 web paradigms simultaneously out of a single ASP.NET Core process:
+    1.  `/` -> Static Web Root Landing Page (`wwwroot/index.html`).
+    2.  `/app` -> Vue 2.x Single Page Application (`wwwroot/app/index.html` via ES Modules).
+    3.  `/home` -> Server-Rendered Razor MVC Views (`HomeController`).
+    4.  `/api/...` -> Controller-based REST APIs with JWT Bearer security.
+    *   **Rule:** Maintain this unified monolith design. Do not split these paradigms into separate projects or introduce node/webpack build servers.
+
+*   **User Terminology & Domain Concepts:** When the user refers to the following terms, map them strictly to their corresponding application paradigm:
+    *   **Landing Page:** The static web root landing page (`/` or `wwwroot/index.html`).
+    *   **SPA** or **app:** The Vue 2.x Single Page Application (`/app` or `wwwroot/app/index.html`), a zero-node, zero-build app using native ES modules.
+    *   **MVC** or **SSR:** ASP.NET Core MVC Razor server-side rendered views (`/home`), with lightweight client-side reactivity powered by `petite-vue`.
+    *   **API** or **WebAPI:** Controller-based REST Web API endpoints (`/api/...`) with JWT Bearer authentication.

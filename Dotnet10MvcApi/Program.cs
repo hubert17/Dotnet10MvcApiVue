@@ -74,6 +74,7 @@ builder.Services.AddAuthentication(options =>
 
 // 3. Register standard services and native OpenAPI
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient();
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, context, cancellationToken) =>
@@ -149,6 +150,15 @@ app.UseAuthorization();
 
 // 6. Map controllers (APIs + MVC routing)
 app.MapControllers();
+
+// Serve wwwroot/app/index.html at /app
+app.MapGet("/app", async context =>
+{
+    var indexPath = Path.Combine(app.Environment.WebRootPath, "app", "index.html");
+    context.Response.ContentType = "text/html";
+    await context.Response.SendFileAsync(indexPath);
+});
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

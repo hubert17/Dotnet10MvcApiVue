@@ -6,7 +6,12 @@ This project is a modern port and upgrade of the legacy SharpDevelop MVC 4 appli
 
 ## 🚀 Key Features & Architecture
 
-*   **Modern Framework (.NET 10.0):** Built on **ASP.NET Core 10.0** utilizing a clean, controller-based layered monolith architecture (`Controllers/Mvc` for Razor views and `Controllers/Api` for REST endpoints).
+*   **Modern Framework (.NET 10.0):** Built on **ASP.NET Core 10.0** utilizing a clean controller-based layered monolith architecture.
+*   **Unified All-In-One Monolith:** A single-project "one-stop shop" that hosts 4 distinct web paradigms out of a single .NET process:
+    1.  **Static Landing Page (`/`):** Glassmorphic entry dashboard served from `wwwroot/index.html`.
+    2.  **Vue 2.x SPA (`/app`):** Client-side Single Page App served from `wwwroot/app/index.html` using native ES modules, Vuetify, Vuex, and Vue Router.
+    3.  **Server-Rendered MVC (`/home`):** Classic Razor view controllers (`Controllers/Mvc`) enhanced with `petite-vue`.
+    4.  **RESTful Web APIs (`/api/...`):** Controller-based API endpoints (`Controllers/Api`) secured with JWT Bearer authentication.
 *   **MS Access Database Provider (Jet / EF Core):** Integrates `EntityFrameworkCore.Jet` targeting an MS Access database file (`MyAccessDb.mdb`). Structured for easy future migration to **PostgreSQL**.
     *   **`#Dual` Table Engine Support:** Automatically initializes and seeds the required single-row `[#Dual]` table on startup to support Jet SQL scalar evaluations (such as LINQ `.Any()`).
     *   **High-Speed Bulk Seeding:** Inserts 10,000+ Billboard dataset records in **under 2 seconds** using parameterized raw ADO.NET SQL commands executed in a single transaction (bypassing EF Core change-tracking overhead).
@@ -16,7 +21,7 @@ This project is a modern port and upgrade of the legacy SharpDevelop MVC 4 appli
 *   **Interactive API Console (Scalar):** Features **Scalar** OpenAPI visualizer served at `/scalar/v1` (with legacy `/swagger` routes automatically redirected to `/scalar/v1`).
 *   **HTML-First Views & CDN-First Assets:**
     *   **HTML-First Views:** Standard HTML5 markup with Bootstrap 4 classes, using Razor syntax strictly for control flow and model values instead of legacy `@Html` helper abstractions.
-    *   **CDN Asset Delivery:** All third-party front-end libraries (Bootstrap 4, Font Awesome, Bootbox, Petite-Vue) are loaded directly via **jsDelivr CDN** (`cdn.jsdelivr.net`).
+    *   **CDN Asset Delivery:** All third-party front-end libraries (Bootstrap 4, Font Awesome, Bootbox, Petite-Vue, Vue 2, Vuetify) are loaded directly via **jsDelivr CDN** (`cdn.jsdelivr.net`).
     *   **Lightweight Reactivity:** Client-side interactivity and form feedback powered by **petite-vue**.
 *   **Utilities & Services:**
     *   **Async Email Service:** Dispatch HTML emails with attachment handling via `IFormFile`.
