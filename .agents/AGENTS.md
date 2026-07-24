@@ -1,0 +1,78 @@
+# Workspace Rules - SharpDevelopMVC Modernization
+
+These instructions govern all future modifications, tests, and task executions performed by AI agents in this repository.
+
+---
+
+## 💻 Environment & Run Requirements
+
+*   **x64 Emulation Constraint:** This application runs on Windows ARM64 but connects to an MS Access database via OLE DB drivers, which are exclusively compiled for x64/x86 architectures.
+    *   **Rule:** Always run, debug, or build the project using the x64 architecture flag:
+        ```powershell
+        dotnet run --arch x64
+        ```
+    *   **Failure Mode:** Running without `--arch x64` results in `assembly not found` or `provider not registered` exceptions during database connection handshakes.
+*   **Debug & Helper Script (`run-debug.bat`):** The project includes `Dotnet10MvcApi/run-debug.bat` to launch the application under the correct architecture:
+    *   **Standard Run:** `.\Dotnet10MvcApi\run-debug.bat`
+    *   **Agent Run (Low Verbosity):** `.\Dotnet10MvcApi\run-debug.bat --agent` (or `/agent`), which executes `dotnet run --project . --arch x64 --verbosity quiet`.
+
+---
+
+## 🗄️ Database & Queries (MS Access Jet / EF Core)
+
+*   **Database Provider:** The project uses `EntityFrameworkCore.Jet` for database connections. Maintain compatibility for easy future shifts to **PostgreSQL**. Do not use MS SQL Server.
+*   **Scalar Queries (#Dual):** The Jet provider translates LINQ evaluations like `.Any()` into SQL containing `FROM #Dual`. 
+    *   **Rule:** The database must contain a helper table named `[#Dual]` with exactly one row. This table is automatically checked and seeded on startup in `Program.cs`. Do not delete or alter this table.
+*   **Bulk Ingest Seeding:** Row-by-row EF Core change-tracked inserts for thousands of records are too slow for the Jet database engine.
+    *   **Rule:** Seeding of large lists (like the Billboard songs database) must be executed using raw parameterized ADO.NET commands inside a single transaction (refer to `Song.Seed(...)`).
+
+---
+
+## 🔐 Hybrid Authentication Model
+
+*   **Dual Authentication Schemas:** The project registers both Cookie and JWT Bearer schemes in `Program.cs`. The default scheme is Cookies.
+    *   **MVC Pages:** Use standard `[Authorize]` attributes (which default to redirection to `/Account/Login`).
+    *   **Web APIs:** Must explicitly request JWT Bearer authentication to check header authorizations:
+        ```csharp
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        ```
+
+---
+
+## 📷 GDI+ & Image Processing
+
+*   **Windows Target Platform:** GDI+ library calls (`System.Drawing.Common`) are used for image rotation, scaling, and thumbnail rendering in `ImageUploadExtension.cs`.
+    *   **Rule:** Platform compatibility warning `CA1416` (not supported on non-Windows platforms) can be ignored or suppressed, as the project is platform-locked to Windows due to OLE DB driver constraints.
+
+---
+
+## 📄 API Documentation
+
+*   **API Reference Route:** The OpenAPI docs and visual playground are powered by **Scalar** (served at `/scalar/v1`).
+    *   **Rule:** Ensure that the legacy redirection endpoint `/swagger` in `Program.cs` remains mapped to `/scalar/v1` for convenience.
+
+---
+
+## 🌐 HTML-First View Implementation
+
+*   **Markup Style:** Prefer standard HTML5 markup over legacy ASP.NET MVC Razor helpers (e.g., `@Html.BeginForm`, `@Html.TextBoxFor`, `@Html.LabelFor`).
+    *   **Rule:** Implement views using clean, raw HTML form controls and Bootstrap 4 classes (`<form action="..." method="...">`, `<input id="..." name="..." class="form-control" />`). Use Razor syntax for essential dynamic control flow (loops, conditionals) and model properties rather than HTML helper abstractions.
+
+---
+
+## ⚡ Client-Side Interactivity (Petite-Vue vs jQuery)
+
+*   **Petite-Vue Preference:** Use `petite-vue` (`https://cdn.jsdelivr.net/npm/petite-vue@0.4.1/dist/petite-vue.es.js`) for lightweight client-side reactivity, state management, form validation feedback, and dynamic toggle behaviors.
+    *   **Rule:** Avoid writing new jQuery DOM manipulation or event listener code. Prefer `petite-vue` reactive state blocks (`createApp({ ... }).mount('#elementId')`) for all tiny and minor view interactivity. Remember to escape event directive syntax in Razor `.cshtml` files using `@@click`, `@@submit`, etc.
+
+---
+
+## 🚀 CDN-First Front-End Asset Delivery
+
+*   **jsDelivr Preference:** All third-party front-end libraries, CSS frameworks, JavaScript utilities, font packages, and icon sets must be served via public CDN, preferring **jsDelivr** (`cdn.jsdelivr.net`).
+    *   **Rule:** Do not reference local vendor asset files (such as Bootstrap, jQuery, Bootbox, Font Awesome, jQuery Validation, jExcel/jSpreadsheet, jSuites, Petite-Vue, Pocket-Vue) in `wwwroot/lib` or `wwwroot/js`. Always link directly to official `cdn.jsdelivr.net` URLs.
+    *   **Razor Escaping:** In Razor `.cshtml` files, remember to escape any `@` symbols in npm package CDN URLs (e.g., `https://cdn.jsdelivr.net/npm/@@fortawesome/fontawesome-free@5.15.4/css/all.min.css`).
+    *   **Application Custom Styles:** Application-specific custom stylesheets (such as `Site.css` and `Account.css`) remain local in `wwwroot/css/`.
+
+
+
