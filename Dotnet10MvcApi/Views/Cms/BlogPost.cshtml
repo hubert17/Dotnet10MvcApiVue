@@ -11,74 +11,81 @@
 
 <!-- Article Header -->
 <header class="py-5" style="background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.12) 0%, rgba(11, 15, 25, 0) 75%); border-bottom: 1px solid var(--cms-border);">
-    <div class="container" style="max-width: 980px;">
-        <!-- Breadcrumb Navigation -->
-        <nav aria-label="breadcrumb" class="mb-4">
-            <ol class="breadcrumb bg-transparent p-0 mb-0 small">
-                <li class="breadcrumb-item"><a href="/" class="text-secondary"><i class="fa-solid fa-house mr-1"></i> Home</a></li>
-                <li class="breadcrumb-item"><a href="/blogs" class="text-primary">Blogs</a></li>
-                <li class="breadcrumb-item active text-muted text-truncate" style="max-width: 250px;" aria-current="page">@Model.Title</li>
-            </ol>
-        </nav>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-11 col-xl-11">
+                <!-- Breadcrumb Navigation -->
+                <nav aria-label="breadcrumb" class="mb-4">
+                    <ol class="breadcrumb bg-transparent p-0 mb-0 small">
+                        <li class="breadcrumb-item"><a href="/" class="text-secondary"><i class="fa-solid fa-house mr-1"></i> Home</a></li>
+                        <li class="breadcrumb-item"><a href="/blogs" class="text-primary">Blogs</a></li>
+                        <li class="breadcrumb-item active text-muted text-truncate" style="max-width: 250px;" aria-current="page">@Model.Title</li>
+                    </ol>
+                </nav>
 
-        <!-- Optional Category Badge -->
-        @if (hasCategory)
-        {
-            <span class="cms-badge-category mb-3 d-inline-block">
-                <i class="fa-solid fa-tag mr-1"></i> @Model.Category.Title
-            </span>
-        }
-
-        <!-- 1. Headline (Required) -->
-        <h1 class="display-4 font-weight-bold text-white mb-3" style="letter-spacing: -0.02em; line-height: 1.2;">@Model.Title</h1>
-
-        <!-- 2. Introduction (Overview - Required) -->
-        @if (hasSubtitle)
-        {
-            <p class="lead text-light mb-4" style="font-size: 1.25rem; line-height: 1.6; opacity: 0.9;">@Model.Subtitle.Value</p>
-        }
-
-        <!-- Optional Author & Date Metadata Bar -->
-        @if (hasAuthor || hasDate)
-        {
-            <div class="d-flex align-items-center text-muted small pt-3 border-top" style="border-color: var(--cms-border) !important;">
-                @if (hasAuthor)
+                <!-- Optional Category Badge -->
+                @if (hasCategory)
                 {
-                    <div class="d-flex align-items-center mr-4">
-                        <div class="avatar-circle mr-2" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #06b6d4); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 13px;">
-                            @(Model.AuthorName.Value.Substring(0, Math.Min(2, Model.AuthorName.Value.Length)).ToUpper())
-                        </div>
-                        <span class="text-white font-weight-medium">@Model.AuthorName.Value</span>
+                    <span class="cms-badge-category mb-3 d-inline-block">
+                        <i class="fa-solid fa-tag mr-1"></i> @Model.Category.Title
+                    </span>
+                }
+
+                <!-- 1. Headline (Required) -->
+                <h1 class="display-4 font-weight-bold text-white mb-3" style="letter-spacing: -0.02em; line-height: 1.2;">@Model.Title</h1>
+
+                <!-- 2. Introduction (Overview - Required) -->
+                @if (hasSubtitle)
+                {
+                    <p class="lead text-light mb-4" style="font-size: 1.25rem; line-height: 1.6; opacity: 0.9;">@Model.Subtitle.Value</p>
+                }
+
+                <!-- Optional Author & Date Metadata Bar -->
+                @if (hasAuthor || hasDate)
+                {
+                    <div class="d-flex align-items-center text-muted small pt-3 border-top" style="border-color: var(--cms-border) !important;">
+                        @if (hasAuthor)
+                        {
+                            <div class="d-flex align-items-center mr-4">
+                                <div class="avatar-circle mr-2" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #06b6d4); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 13px;">
+                                    @(Model.AuthorName.Value.Substring(0, Math.Min(2, Model.AuthorName.Value.Length)).ToUpper())
+                                </div>
+                                <span class="text-white font-weight-medium">@Model.AuthorName.Value</span>
+                            </div>
+                        }
+                        @if (hasDate)
+                        {
+                            <span><i class="fa-regular fa-calendar-alt mr-1 text-primary"></i> @Model.Published.Value.ToString("MMMM dd, yyyy")</span>
+                        }
                     </div>
                 }
-                @if (hasDate)
-                {
-                    <span><i class="fa-regular fa-calendar-alt mr-1 text-primary"></i> @Model.Published.Value.ToString("MMMM dd, yyyy")</span>
-                }
             </div>
-        }
+        </div>
     </div>
 </header>
 
 <!-- Article Reader Content -->
 <main class="py-5">
-    <div class="container" style="max-width: 980px;">
-        <article class="cms-article-content text-light" style="font-size: 1.125rem; line-height: 1.85;">
-            
-            <!-- 3. Body Blocks -->
-            @foreach (var block in Model.Blocks)
-            {
-                @Html.DisplayFor(m => block, block.GetType().Name)
-            }
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-11 col-xl-11">
+                <article class="cms-article-content text-light" style="font-size: 1.125rem; line-height: 1.85;">
+                    
+                    <!-- 3. Body Blocks -->
+                    @foreach (var block in Model.Blocks)
+                    {
+                        @Html.DisplayFor(m => block, block.GetType().Name)
+                    }
 
-
-            <!-- Footer Navigation -->
-            <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top" style="border-color: var(--cms-border) !important;">
-                <a href="/blogs" class="btn btn-cms-outline btn-sm">
-                    <i class="fa-solid fa-arrow-left mr-1"></i> Back to Blogs
-                </a>
-                <span class="text-muted small">Dotnet10 Platform Insights</span>
+                    <!-- Footer Navigation -->
+                    <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top" style="border-color: var(--cms-border) !important;">
+                        <a href="/blogs" class="btn btn-cms-outline btn-sm">
+                            <i class="fa-solid fa-arrow-left mr-1"></i> Back to Blogs
+                        </a>
+                        <span class="text-muted small">Dotnet10 Platform Insights</span>
+                    </div>
+                </article>
             </div>
-        </article>
+        </div>
     </div>
 </main>
