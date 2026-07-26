@@ -168,7 +168,7 @@ builder.Services.AddPiranha(options =>
     options.UseTinyMCE();
     options.UseMemoryCache();
     options.UseImageSharp();
-    options.UseFileStorage(naming: Piranha.Local.FileStorageNaming.UniqueFolderNames);
+    options.UseFileStorage(basePath: "wwwroot/cms/uploads", baseUrl: "~/cms/uploads/", naming: Piranha.Local.FileStorageNaming.UniqueFolderNames);
 });
 
 // Register the Piranha Manager security bridge (LocalAuth ISecurity)
