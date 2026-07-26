@@ -6,7 +6,7 @@
 }
 
 @section head {
-	<!-- FontAwesome for modern icons -->
+	@* FontAwesome for modern icons *@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@fortawesome/fontawesome-free@5.15.4/css/all.min.css" />
 }
 
@@ -30,20 +30,20 @@
 						@Html.AntiForgeryToken()
 						<input type="hidden" name="Id" value="@Model.Id" />
 
-						<!-- Name input -->
+						@* Name input *@
 						<div class="form-group mb-3">
 							<label for="Name" class="font-weight-bold text-secondary small text-uppercase">Product Name</label>
 							<input id="Name" name="Name" type="text" value="@Model.Name" class="form-control" placeholder="e.g. Tide Laundry Detergent" required>
 						</div>
 
-						<!-- Description input -->
+						@* Description input *@
 						<div class="form-group mb-3">
 							<label for="Description" class="font-weight-bold text-secondary small text-uppercase">Description</label>
 							<textarea id="Description" name="Description" class="form-control" rows="3" placeholder="Describe the product features and package contents...">@Model.Description</textarea>
 						</div>
 
 						<div class="row">
-							<!-- Unit Price input -->
+							@* Unit Price input *@
 							<div class="col-md-6 form-group mb-3">
 								<label for="UnitPrice" class="font-weight-bold text-secondary small text-uppercase">Unit Price</label>
 								<div class="input-group">
@@ -54,14 +54,14 @@
 								</div>
 							</div>
 
-							<!-- Unit input -->
+							@* Unit input *@
 							<div class="col-md-6 form-group mb-3">
 								<label for="Unit" class="font-weight-bold text-secondary small text-uppercase">Unit</label>
 								<input id="Unit" name="Unit" type="text" value="@Model.Unit" class="form-control" placeholder="e.g. bottle, pack, box">
 							</div>
 						</div>
 
-						<!-- Current Photo Preview -->
+						@* Current Photo Preview *@
 						@if (!string.IsNullOrEmpty(Model.PictureFilename))
 						{
 							<div class="form-group mb-3">
@@ -73,7 +73,7 @@
 							</div>
 						}
 
-						<!-- File Upload -->
+						@* File Upload *@
 						<div class="form-group mb-4">
 							<label for="fileUpload" class="font-weight-bold text-secondary small text-uppercase">Upload New Photo</label>
 							<div class="custom-file">
@@ -83,7 +83,7 @@
 							<small class="form-text text-muted">Selecting a new photo will replace the existing one.</small>
 						</div>
 
-						<!-- Action Buttons -->
+						@* Action Buttons *@
 						<div class="d-flex justify-content-between border-top pt-4">
 							<a href="/crudsample/manage" class="btn btn-light text-secondary font-weight-bold px-4">
 								<i class="fas fa-arrow-left mr-1"></i> Back

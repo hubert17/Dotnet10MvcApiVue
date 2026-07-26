@@ -6,13 +6,13 @@
 }
 
 @section head {
-	<!-- FontAwesome for modern icons -->
+	@* FontAwesome for modern icons *@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@fortawesome/fontawesome-free@5.15.4/css/all.min.css" />
 }
 
 <div class="container-fluid py-4">
 	<div class="card shadow-sm border-0 rounded-lg">
-		<!-- Card Header with Title and Add Button -->
+		@* Card Header with Title and Add Button *@
 		<div class="card-header bg-white border-0 pt-4 pb-0 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center">
 			<div class="mb-3 mb-sm-0">
 				<h3 class="card-title text-dark font-weight-bold mb-1">
@@ -25,7 +25,7 @@
 			</div>
 		</div>
 
-		<!-- Card Body with Table -->
+		@* Card Body with Table *@
 		<div class="card-body px-0 pb-0">
 			<div class="table-responsive">
 				<table class="table table-hover align-middle mb-0 text-nowrap">
@@ -54,11 +54,11 @@
 							foreach (var product in Model)
 							{
 								<tr>
-									<!-- ID Column -->
+									@* ID Column *@
 									<td class="pl-4 font-weight-bold text-secondary align-middle">
 										#@product.Id
 									</td>
-									<!-- Product Info Column -->
+									@* Product Info Column *@
 									<td class="align-middle">
 										<div class="font-weight-bold text-dark mb-0">@product.Name</div>
 										@if (!string.IsNullOrEmpty(product.Description))
@@ -72,17 +72,17 @@
 											<span class="text-muted small font-italic">No description</span>
 										}
 									</td>
-									<!-- Unit Price Column -->
+									@* Unit Price Column *@
 									<td class="text-right font-weight-bold text-dark align-middle pr-3">
 										@string.Format("{0:C2}", product.UnitPrice)
 									</td>
-									<!-- Unit Column -->
+									@* Unit Column *@
 									<td class="align-middle">
 										<span class="badge badge-secondary px-3 py-2 rounded-pill font-weight-normal">
 											@product.Unit
 										</span>
 									</td>
-									<!-- Photo Column -->
+									@* Photo Column *@
 									<td class="text-center align-middle">
 										@if (!string.IsNullOrEmpty(product.PictureFilename))
 										{
@@ -99,7 +99,7 @@
 											</div>
 										}
 									</td>
-									<!-- Actions Column -->
+									@* Actions Column *@
 									<td class="pr-4 text-center align-middle">
 										<div class="btn-group" role="group" aria-label="Product Actions">
 											<a href="/crudsample/Edit/@product.Id" class="btn btn-sm btn-outline-warning border-warning mr-2 rounded" title="Edit Product">

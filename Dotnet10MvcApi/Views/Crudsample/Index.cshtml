@@ -6,7 +6,7 @@
 }
 
 @section head {
-	<!-- FontAwesome for modern icons -->
+	@* FontAwesome for modern icons *@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@fortawesome/fontawesome-free@5.15.4/css/all.min.css" />
 }
 
@@ -24,9 +24,9 @@
 
 <div class="container py-4">
 	<div class="row">
-		<!-- Sidebar Column -->
+		@* Sidebar Column *@
 		<div class="col-lg-3">
-			<!-- Shop Brand Card -->
+			@* Shop Brand Card *@
 			<div class="card border-0 shadow-sm mb-4 rounded-lg bg-primary text-white">
 				<div class="card-body p-4 text-center">
 					<i class="fas fa-shopping-bag fa-3x mb-3 text-white-50"></i>
@@ -35,7 +35,7 @@
 				</div>
 			</div>
 
-			<!-- Categories Card -->
+			@* Categories Card *@
 			<div class="card border-0 shadow-sm mb-4 rounded-lg">
 				<div class="card-header bg-white border-bottom-0 pt-3 pb-0">
 					<h6 class="font-weight-bold text-dark mb-0">Categories</h6>
@@ -57,7 +57,7 @@
 				</div>
 			</div>
 
-			<!-- Manage Inventory Button Card -->
+			@* Manage Inventory Button Card *@
 			<div class="card border-0 shadow-sm mb-4 rounded-lg">
 				<div class="card-body p-3">
 					<h6 class="font-weight-bold text-secondary mb-2 small text-uppercase">Admin Panel</h6>
@@ -68,9 +68,9 @@
 			</div>
 		</div>
 
-		<!-- Main Content Column -->
+		@* Main Content Column *@
 		<div class="col-lg-9">
-			<!-- Carousel -->
+			@* Carousel *@
 			<div id="carouselExampleIndicators" class="carousel slide shadow-sm mb-4 rounded-lg overflow-hidden" data-ride="carousel">
 				<ol class="carousel-indicators">
 					<li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
@@ -98,7 +98,7 @@
 				</a>
 			</div>
 
-			<!-- Product Grid -->
+			@* Product Grid *@
 			<div class="row">
 				@if (Model == null || !Model.Any())
 				{
@@ -143,7 +143,7 @@
 				}
 			</div>
 
-			<!-- Pagination -->
+			@* Pagination *@
 			@if (ViewBag.TotalPages != null && ViewBag.TotalPages > 1)
 			{
 				<nav aria-label="Product navigation" class="mt-4">

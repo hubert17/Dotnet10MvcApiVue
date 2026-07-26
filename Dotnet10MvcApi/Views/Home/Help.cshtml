@@ -4,19 +4,19 @@
 }
 
 @section head {
-	<!-- FontAwesome for documentation icons -->
+	@* FontAwesome for documentation icons *@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@fortawesome/fontawesome-free@5.15.4/css/all.min.css" />
 }
 
 <div class="container py-4">
-	<!-- Page Header -->
+	@* Page Header *@
 	<div class="border-bottom pb-3 mb-4">
 		<h1 class="font-weight-bold text-dark"><i class="fas fa-info-circle text-primary mr-2"></i>@ViewBag.Title</h1>
 		<p class="text-muted lead">Learn how this project is structured, how to resolve common setup issues, and how to get it running locally or in production.</p>
 	</div>
 
 	<div class="row">
-		<!-- Sidebar Navigation (Table of Contents) -->
+		@* Sidebar Navigation (Table of Contents) *@
 		<div class="col-lg-3 mb-4">
 			<div class="sticky-top" style="top: 80px; z-index: 100;">
 				<div class="card border-0 shadow-sm rounded-lg">
@@ -34,9 +34,9 @@
 			</div>
 		</div>
 
-		<!-- Main Documentation Content -->
+		@* Main Documentation Content *@
 		<div class="col-lg-9">
-			<!-- Section 1: Overview -->
+			@* Section 1: Overview *@
 			<section id="overview" class="mb-5 scroll-margin">
 				<h2 class="h3 font-weight-bold text-dark border-bottom pb-2 mb-3">Overview</h2>
 				<p>
@@ -45,7 +45,7 @@
 				</p>
 			</section>
 
-			<!-- Section 2: Features & Tech Stack -->
+			@* Section 2: Features & Tech Stack *@
 			<section id="features" class="mb-5 scroll-margin">
 				<h2 class="h3 font-weight-bold text-dark border-bottom pb-2 mb-3">Features &amp; Tech Stack</h2>
 				<p>This project comes integrated with a bundle of modern libraries:</p>
@@ -78,7 +78,7 @@
 				</div>
 			</section>
 
-			<!-- Section 3: Quick Start -->
+			@* Section 3: Quick Start *@
 			<section id="getting-started" class="mb-5 scroll-margin">
 				<h2 class="h3 font-weight-bold text-dark border-bottom pb-2 mb-3">Quick Start</h2>
 				
@@ -91,7 +91,7 @@
 				</div>
 			</section>
 
-			<!-- Section 4: Database Configuration -->
+			@* Section 4: Database Configuration *@
 			<section id="database" class="mb-5 scroll-margin">
 				<h2 class="h3 font-weight-bold text-dark border-bottom pb-2 mb-3">Database Setup</h2>
 				<p>Database is seeded automatically on startup in <code>Program.cs</code>.</p>

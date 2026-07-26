@@ -8,7 +8,7 @@
 }
 
 <section id="comments" class="mt-5 pt-4 border-top" style="border-color: var(--cms-border) !important;">
-    <!-- Section Title & Counter -->
+    @* Section Title & Counter *@
     <div class="d-flex align-items-center justify-content-between mb-4">
         <h3 class="h4 font-weight-bold text-white mb-0 d-flex align-items-center">
             <i class="fa-solid fa-comments text-primary mr-2"></i>
@@ -22,7 +22,7 @@
         }
     </div>
 
-    <!-- Alert Feedback Notifications -->
+    @* Alert Feedback Notifications *@
     @if (!string.IsNullOrEmpty(successMsg))
     {
         <div class="alert alert-success alert-dismissible fade show border-0 bg-success-dark text-white mb-4" role="alert" style="background-color: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4) !important;">
@@ -43,7 +43,7 @@
         </div>
     }
 
-    <!-- Approved Comments List -->
+    @* Approved Comments List *@
     <div class="comments-list mb-5">
         @if (commentsList.Any())
         {
@@ -55,7 +55,7 @@
 
                 <div class="card mb-3 border-0 rounded-lg p-3" style="background: rgba(17, 24, 39, 0.7); border: 1px solid var(--cms-border) !important;">
                     <div class="d-flex align-items-start">
-                        <!-- Author Avatar -->
+                        @* Author Avatar *@
                         <div class="avatar-circle mr-3 flex-shrink-0" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #3b82f6); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 14px;">
                             @initials
                         </div>
@@ -94,7 +94,7 @@
         }
     </div>
 
-    <!-- Comment Submission Form -->
+    @* Comment Submission Form *@
     @if (enableComments)
     {
         <div id="leave-comment" class="card border-0 rounded-lg p-4" style="background: rgba(17, 24, 39, 0.85); border: 1px solid var(--cms-border) !important;">

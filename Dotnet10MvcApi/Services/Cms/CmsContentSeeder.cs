@@ -160,9 +160,11 @@ namespace Dotnet10MvcApi.Services.Cms
                     article1.Tags.Add("OAuth");
                     article1.Subtitle = "Combining Cookie authentication for SSR with JWT Bearer tokens for REST Web APIs.";
                     article1.Excerpt = "An in-depth guide on implementing hybrid cookie and bearer token authentication in ASP.NET Core.";
+                    article1.AuthorName = "Bernard Gabon";
                     article1.ReadingTime = "5 mins";
                     article1.Published = DateTime.Now.AddDays(-3);
-                    article1.EnableComments = true;
+                    article1.EnableComments = false;
+                    article1.Citations = "<ol><li>Microsoft Docs: <a href='https://learn.microsoft.com/aspnet/core/security/' target='_blank' class='text-info'>ASP.NET Core Security Guidelines</a></li><li>IETF RFC 7519: <a href='https://datatracker.ietf.org/doc/html/rfc7519' target='_blank' class='text-info'>JSON Web Token Specification</a></li></ol>";
 
                     article1.Blocks.Add(new HtmlBlock
                     {
@@ -178,14 +180,6 @@ namespace Dotnet10MvcApi.Services.Cms
                                 <p>Hybrid authentication gives you the best of both worlds: secure browser session cookies for SSR pages and bearer tokens for stateless REST endpoints.</p>"
                     });
                     await api.Posts.SaveAsync(article1);
-                    await api.Posts.SaveCommentAsync(article1.Id, new PostComment
-                    {
-                        Author = "Alex Rivera",
-                        Email = "alex@example.com",
-                        Body = "Awesome explanation of hybrid authentication! Very practical.",
-                        IsApproved = true,
-                        Created = DateTime.Now.AddDays(-2)
-                    });
 
                     // Seed Article 2
                     var article2 = await ArticlePost.CreateAsync(api);
@@ -198,9 +192,11 @@ namespace Dotnet10MvcApi.Services.Cms
                     article2.Tags.Add("EFCore");
                     article2.Subtitle = "EF Core query optimizations, scalar queries, and lightweight CDN asset loading.";
                     article2.Excerpt = "Practical techniques for optimizing web application throughput, query speeds, and front-end asset loading.";
+                    article2.AuthorName = "Bernard Gabon";
                     article2.ReadingTime = "7 mins";
                     article2.Published = DateTime.Now.AddDays(-1);
-                    article2.EnableComments = true;
+                    article2.EnableComments = false;
+                    article2.Citations = "<ol><li>EntityFrameworkCore.Jet Provider Documentation and `#Dual` query translation rules.</li><li>jsDelivr Public CDN asset caching and distribution patterns.</li></ol>";
 
                     article2.Blocks.Add(new HtmlBlock
                     {
