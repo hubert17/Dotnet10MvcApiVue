@@ -79,7 +79,8 @@ builder.Services.AddAuthentication(options =>
 });
 
 // 3. Register standard services and native OpenAPI
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddNewtonsoftJson();
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-XSRF-TOKEN";
