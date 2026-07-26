@@ -130,7 +130,8 @@ h1, h2, h3, h4, h5, h6, .brand-title {
     border-radius: 9999px;
 }
 
-.btn-cms-action {
+.btn-cms-action,
+.btn-cms-primary {
     background: var(--cms-gradient);
     color: #fff !important;
     font-weight: 700;
@@ -141,10 +142,12 @@ h1, h2, h3, h4, h5, h6, .brand-title {
     transition: all 0.2s ease;
 }
 
-.btn-cms-action:hover {
+.btn-cms-action:hover,
+.btn-cms-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px var(--cms-glow);
     opacity: 0.95;
+    color: #fff !important;
 }
 
 .btn-cms-outline {
