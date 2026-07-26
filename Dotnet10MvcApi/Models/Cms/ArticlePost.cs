@@ -16,6 +16,6 @@ namespace Dotnet10MvcApi.Models.Cms
         public StringField ReadingTime { get; set; } = new();
 
         [Region(Title = "Require Comment Moderation")]
-        public CheckField RequireModeration { get; set; } = new() { Value = true };
+        public CheckBoxField RequireModeration { get; set; } = new() { Value = true };
     }
 }
