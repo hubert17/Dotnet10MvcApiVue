@@ -39,6 +39,12 @@ These instructions govern all future modifications, tests, and task executions p
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         ```
     *   **Piranha CMS Manager Portal:** Accessible at `/manager`. Administrators (`admin`) logging in are automatically granted Piranha Manager security claims (`Piranha.Manager.Permission.All()`).
+*   **Piranha Manager Anti-Forgery Token Handling:**
+    *   **Current Setup:** Anti-Forgery validation for Piranha Manager API routes (`/manager/api/*`) is temporarily bypassed using `BypassManagerAntiforgery.cs` registered in `Program.cs`.
+    *   **Future Restoration & Fix Guide:** To re-enable strict Anti-Forgery validation on `/manager/api`:
+        1. Remove the `BypassManagerAntiforgery` DI decorator registration in `Program.cs`.
+        2. Ensure `builder.Services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN")` is set without overriding `options.Cookie.Name` (keeping ASP.NET Core's internal `CookieToken` separate).
+        3. Ensure the middleware appends `tokens.RequestToken` into a non-`HttpOnly` cookie named `"XSRF-TOKEN"` on `/manager` GET requests so Piranha Manager's Vue frontend JS populates `x-xsrf-token` headers on `POST /manager/api/post/save` requests.
 
 ---
 
