@@ -250,10 +250,34 @@ app.Use(async (context, next) =>
                 using var reader = new StreamReader(memoryStream, Encoding.UTF8, leaveOpen: true);
                 var html = await reader.ReadToEndAsync();
 
-                const string contrastFix = "<style id='piranha-contrast-fix'>.text-light,.text-white,[class*='text-light'],[class*='text-white']{color:#334155!important;}</style>";
+                const string managerScriptFix = @"<style id='piranha-contrast-fix'>
+.text-light,.text-white,[class*='text-light'],[class*='text-white']{color:#334155!important;}
+.nav-item.nav-header a, a.navbar-text, [href*='logout'] { cursor: pointer !important; }
+</style>
+<script id='piranha-logout-fix'>
+document.addEventListener('DOMContentLoaded', function() {
+    var setupLogout = function() {
+        document.querySelectorAll('.nav-item.nav-header a, a.navbar-text').forEach(function(el) {
+            if (el.textContent && el.textContent.trim().toLowerCase().includes('logout')) {
+                el.setAttribute('href', '/manager/logout');
+                el.style.cursor = 'pointer';
+            }
+        });
+    };
+    setupLogout();
+    setTimeout(setupLogout, 500);
+    document.addEventListener('click', function(e) {
+        var target = e.target.closest('a');
+        if (target && target.textContent && target.textContent.trim().toLowerCase().includes('logout')) {
+            e.preventDefault();
+            window.location.href = '/manager/logout';
+        }
+    });
+});
+</script>";
                 if (html.Contains("</head>"))
                 {
-                    html = html.Replace("</head>", $"{contrastFix}</head>");
+                    html = html.Replace("</head>", $"{managerScriptFix}</head>");
                 }
 
                 var bytes = Encoding.UTF8.GetBytes(html);

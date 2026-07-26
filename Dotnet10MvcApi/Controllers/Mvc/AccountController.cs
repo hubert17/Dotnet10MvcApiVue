@@ -155,10 +155,14 @@ namespace Dotnet10MvcApi.Controllers.Mvc
             }
         }
 
+        [HttpGet("/manager/logout")]
+        [HttpGet("/manager/login/logout")]
+        [HttpPost("/manager/login/logout")]
+        [HttpGet("/Account/Logout")]
         public async Task<IActionResult> Logoff()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Login", "Account");
         }
 
         [Authorize]
