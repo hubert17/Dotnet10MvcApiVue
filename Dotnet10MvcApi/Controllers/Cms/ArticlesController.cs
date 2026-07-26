@@ -62,10 +62,17 @@ namespace Dotnet10MvcApi.Controllers.Cms
                 return Redirect($"/articles/{slug}#comments");
             }
 
-            var success = await _cmsService.SavePostCommentAsync(article.Id, authorName.Trim(), authorEmail.Trim(), commentBody.Trim(), authorUrl?.Trim());
-            if (success)
+            var savedComment = await _cmsService.SavePostCommentAsync(article.Id, authorName.Trim(), authorEmail.Trim(), commentBody.Trim(), authorUrl?.Trim());
+            if (savedComment != null)
             {
-                TempData["CommentSuccess"] = "Your comment has been submitted and is queued for moderation.";
+                if (savedComment.IsApproved)
+                {
+                    TempData["CommentSuccess"] = "Your comment has been published successfully.";
+                }
+                else
+                {
+                    TempData["CommentSuccess"] = "Your comment has been submitted and is queued for moderation.";
+                }
             }
             else
             {

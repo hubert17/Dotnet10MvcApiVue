@@ -115,7 +115,7 @@ namespace Dotnet10MvcApi.Services.Cms
             }
         }
 
-        public async Task<bool> SavePostCommentAsync(Guid postId, string author, string email, string body, string? url = null)
+        public async Task<PostComment?> SavePostCommentAsync(Guid postId, string author, string email, string body, string? url = null)
         {
             try
             {
@@ -128,12 +128,12 @@ namespace Dotnet10MvcApi.Services.Cms
                     Created = DateTime.Now
                 };
                 await _api.Posts.SaveCommentAsync(postId, comment);
-                return true;
+                return comment;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error saving comment for post '{postId}': {ex.Message}");
-                return false;
+                return null;
             }
         }
     }
