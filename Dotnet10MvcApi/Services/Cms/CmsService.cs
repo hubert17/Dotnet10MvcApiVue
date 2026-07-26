@@ -101,5 +101,40 @@ namespace Dotnet10MvcApi.Services.Cms
                 return null;
             }
         }
+
+        public async Task<IEnumerable<Comment>> GetPostCommentsAsync(Guid postId, bool onlyApproved = true)
+        {
+            try
+            {
+                return await _api.Posts.GetAllCommentsAsync(postId, onlyApproved);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching comments for post '{postId}': {ex.Message}");
+                return Enumerable.Empty<Comment>();
+            }
+        }
+
+        public async Task<bool> SavePostCommentAsync(Guid postId, string author, string email, string body, string? url = null)
+        {
+            try
+            {
+                var comment = new PostComment
+                {
+                    Author = author,
+                    Email = email,
+                    Body = body,
+                    Url = url,
+                    Created = DateTime.Now
+                };
+                await _api.Posts.SaveCommentAsync(postId, comment);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving comment for post '{postId}': {ex.Message}");
+                return false;
+            }
+        }
     }
 }

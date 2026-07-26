@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Dotnet10MvcApi.Models.Cms;
 using Dotnet10MvcApi.Models.Cms.Blocks;
 using Piranha;
+using Piranha.Models;
 using Piranha.Extend.Blocks;
 
 namespace Dotnet10MvcApi.Services.Cms
@@ -80,6 +81,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     post1.AuthorName = "Bernard Gabon";
                     post1.Published = DateTime.Now.AddDays(-2);
 
+                    post1.EnableComments = true;
                     post1.Blocks.Add(new HtmlBlock
                     {
                         Body = @"<p class='lead text-light'>Welcome to our official platform engineering blog! This application is engineered as a unified ASP.NET Core monolith, serving static landing pages, reactive Vue 2.x single page applications, server-side rendered Razor MVC views, JWT-secured REST APIs, and dynamic Piranha CMS content simultaneously.</p>
@@ -99,6 +101,14 @@ namespace Dotnet10MvcApi.Services.Cms
                                 <p>By eliminating Node build pipelines while leveraging standard ASP.NET Core patterns, developer velocity is maximized with zero build friction.</p>"
                     });
                     await api.Posts.SaveAsync(post1);
+                    await api.Posts.SaveCommentAsync(post1.Id, new PostComment
+                    {
+                        Author = "Jane Doe",
+                        Email = "jane@example.com",
+                        Body = "Great article on multi-paradigm architecture! The unified monolith approach is very clean.",
+                        IsApproved = true,
+                        Created = DateTime.Now.AddDays(-1)
+                    });
 
                     // Seed Blog Post 2
                     var post2 = await BlogPost.CreateAsync(api);
@@ -113,6 +123,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     post2.Excerpt = "Learn how to build lightweight Vue 2.x applications directly in ASP.NET Core without Webpack or Node.js build steps.";
                     post2.AuthorName = "Bernard Gabon";
                     post2.Published = DateTime.Now.AddDays(-1);
+                    post2.EnableComments = true;
 
                     post2.Blocks.Add(new HtmlBlock
                     {
@@ -149,6 +160,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     article1.Excerpt = "An in-depth guide on implementing hybrid cookie and bearer token authentication in ASP.NET Core.";
                     article1.ReadingTime = "5 mins";
                     article1.Published = DateTime.Now.AddDays(-3);
+                    article1.EnableComments = true;
 
                     article1.Blocks.Add(new HtmlBlock
                     {
@@ -164,6 +176,14 @@ namespace Dotnet10MvcApi.Services.Cms
                                 <p>Hybrid authentication gives you the best of both worlds: secure browser session cookies for SSR pages and bearer tokens for stateless REST endpoints.</p>"
                     });
                     await api.Posts.SaveAsync(article1);
+                    await api.Posts.SaveCommentAsync(article1.Id, new PostComment
+                    {
+                        Author = "Alex Rivera",
+                        Email = "alex@example.com",
+                        Body = "Awesome explanation of hybrid authentication! Very practical.",
+                        IsApproved = true,
+                        Created = DateTime.Now.AddDays(-2)
+                    });
 
                     // Seed Article 2
                     var article2 = await ArticlePost.CreateAsync(api);
@@ -178,6 +198,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     article2.Excerpt = "Practical techniques for optimizing web application throughput, query speeds, and front-end asset loading.";
                     article2.ReadingTime = "7 mins";
                     article2.Published = DateTime.Now.AddDays(-1);
+                    article2.EnableComments = true;
 
                     article2.Blocks.Add(new HtmlBlock
                     {

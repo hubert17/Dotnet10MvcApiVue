@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Dotnet10MvcApi.Models.Cms;
 using Dotnet10MvcApi.Services.Cms;
 
 namespace Dotnet10MvcApi.Controllers.Cms
@@ -31,7 +32,47 @@ namespace Dotnet10MvcApi.Controllers.Cms
             {
                 return NotFound();
             }
+
+            var comments = await _cmsService.GetPostCommentsAsync(article.Id, onlyApproved: true);
+            ViewBag.CommentsModel = new CommentSectionViewModel
+            {
+                PostId = article.Id,
+                EnableComments = article.EnableComments,
+                Comments = comments,
+                FormAction = $"/articles/{slug}/comment"
+            };
+
             return View("~/Views/Cms/ArticlePost.cshtml", article);
+        }
+
+        // POST /articles/{slug}/comment
+        [HttpPost("{slug}/comment")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveComment(string slug, [FromForm] string authorName, [FromForm] string authorEmail, [FromForm] string commentBody, [FromForm] string? authorUrl)
+        {
+            var article = await _cmsService.GetArticleBySlugAsync(slug);
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+            if (string.IsNullOrWhiteSpace(authorName) || string.IsNullOrWhiteSpace(authorEmail) || string.IsNullOrWhiteSpace(commentBody))
+            {
+                TempData["CommentError"] = "Please fill in all required fields (Name, Email, and Comment).";
+                return Redirect($"/articles/{slug}#comments");
+            }
+
+            var success = await _cmsService.SavePostCommentAsync(article.Id, authorName.Trim(), authorEmail.Trim(), commentBody.Trim(), authorUrl?.Trim());
+            if (success)
+            {
+                TempData["CommentSuccess"] = "Your comment has been submitted and is queued for moderation.";
+            }
+            else
+            {
+                TempData["CommentError"] = "An error occurred while submitting your comment. Please try again.";
+            }
+
+            return Redirect($"/articles/{slug}#comments");
         }
     }
 }

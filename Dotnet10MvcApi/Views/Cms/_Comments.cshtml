@@ -1,0 +1,151 @@
+@model Dotnet10MvcApi.Models.Cms.CommentSectionViewModel
+@{
+    var commentsList = Model?.Comments?.ToList() ?? new List<Piranha.Models.Comment>();
+    var successMsg = TempData["CommentSuccess"] as string;
+    var errorMsg = TempData["CommentError"] as string;
+    var formAction = Model?.FormAction ?? "#";
+    var enableComments = Model?.EnableComments ?? true;
+}
+
+<section id="comments" class="mt-5 pt-4 border-top" style="border-color: var(--cms-border) !important;">
+    <!-- Section Title & Counter -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h3 class="h4 font-weight-bold text-white mb-0 d-flex align-items-center">
+            <i class="fa-solid fa-comments text-primary mr-2"></i>
+            Comments <span class="badge badge-pill badge-secondary ml-2 small" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; font-size: 0.85rem;">@commentsList.Count</span>
+        </h3>
+        @if (enableComments)
+        {
+            <a href="#leave-comment" class="btn btn-cms-outline btn-sm">
+                <i class="fa-solid fa-pen mr-1"></i> Leave a Comment
+            </a>
+        }
+    </div>
+
+    <!-- Alert Feedback Notifications -->
+    @if (!string.IsNullOrEmpty(successMsg))
+    {
+        <div class="alert alert-success alert-dismissible fade show border-0 bg-success-dark text-white mb-4" role="alert" style="background-color: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4) !important;">
+            <i class="fa-solid fa-circle-check mr-2 text-success"></i> @successMsg
+            <button type="button" class="close text-white" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMsg))
+    {
+        <div class="alert alert-danger alert-dismissible fade show border-0 bg-danger-dark text-white mb-4" role="alert" style="background-color: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4) !important;">
+            <i class="fa-solid fa-triangle-exclamation mr-2 text-danger"></i> @errorMsg
+            <button type="button" class="close text-white" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    <!-- Approved Comments List -->
+    <div class="comments-list mb-5">
+        @if (commentsList.Any())
+        {
+            @foreach (var comment in commentsList)
+            {
+                var initials = !string.IsNullOrWhiteSpace(comment.Author) 
+                    ? comment.Author.Substring(0, Math.Min(2, comment.Author.Length)).ToUpper() 
+                    : "AN";
+
+                <div class="card mb-3 border-0 rounded-lg p-3" style="background: rgba(17, 24, 39, 0.7); border: 1px solid var(--cms-border) !important;">
+                    <div class="d-flex align-items-start">
+                        <!-- Author Avatar -->
+                        <div class="avatar-circle mr-3 flex-shrink-0" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #3b82f6); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 14px;">
+                            @initials
+                        </div>
+
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <h5 class="h6 text-white font-weight-bold mb-0">
+                                    @if (!string.IsNullOrWhiteSpace(comment.Url))
+                                    {
+                                        <a href="@comment.Url" target="_blank" rel="noopener noreferrer" class="text-white text-decoration-none hover-underline">
+                                            @comment.Author <i class="fa-solid fa-arrow-up-right-from-square small text-muted ml-1" style="font-size: 10px;"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        @comment.Author
+                                    }
+                                </h5>
+                                <span class="small text-muted">
+                                    <i class="fa-regular fa-clock mr-1"></i> @comment.Created.ToString("MMM dd, yyyy 'at' h:mm tt")
+                                </span>
+                            </div>
+
+                            <p class="text-light mb-0 small" style="line-height: 1.6; white-space: pre-line;">@comment.Body</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-4 px-3 rounded-lg" style="background: rgba(17, 24, 39, 0.4); border: 1px dashed var(--cms-border);">
+                <i class="fa-regular fa-comments text-muted display-4 mb-2" style="opacity: 0.4;"></i>
+                <p class="text-muted mb-0">No comments yet. Be the first to share your thoughts on this topic!</p>
+            </div>
+        }
+    </div>
+
+    <!-- Comment Submission Form -->
+    @if (enableComments)
+    {
+        <div id="leave-comment" class="card border-0 rounded-lg p-4" style="background: rgba(17, 24, 39, 0.85); border: 1px solid var(--cms-border) !important;">
+            <h4 class="h5 font-weight-bold text-white mb-3 d-flex align-items-center">
+                <i class="fa-solid fa-paper-plane text-primary mr-2"></i> Leave a Comment
+            </h4>
+            <p class="small text-muted mb-4">Your email address will not be published. Required fields are marked <span class="text-danger">*</span></p>
+
+            <form method="post" action="@formAction" id="commentForm" v-scope="{ isSubmitting: false }" @@submit="isSubmitting = true">
+                @Html.AntiForgeryToken()
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="authorName" class="small text-light font-weight-medium">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="authorName" name="authorName" placeholder="e.g. John Doe" required style="border-color: rgba(255,255,255,0.15) !important;" />
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="authorEmail" class="small text-light font-weight-medium">Email Address <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control bg-dark text-white border-secondary" id="authorEmail" name="authorEmail" placeholder="name@example.com" required style="border-color: rgba(255,255,255,0.15) !important;" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="authorUrl" class="small text-light font-weight-medium">Website / Portfolio <span class="text-muted">(Optional)</span></label>
+                    <input type="url" class="form-control bg-dark text-white border-secondary" id="authorUrl" name="authorUrl" placeholder="https://yourwebsite.com" style="border-color: rgba(255,255,255,0.15) !important;" />
+                </div>
+
+                <div class="form-group mb-4">
+                    <label for="commentBody" class="small text-light font-weight-medium">Comment <span class="text-danger">*</span></label>
+                    <textarea class="form-control bg-dark text-white border-secondary" id="commentBody" name="commentBody" rows="4" placeholder="Write your thoughts or feedback here..." required style="border-color: rgba(255,255,255,0.15) !important;"></textarea>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted"><i class="fa-solid fa-shield-halved mr-1 text-info"></i> Comments are queued for moderation before publishing.</span>
+                    <button type="submit" class="btn btn-cms-primary btn-md px-4" :disabled="isSubmitting">
+                        <span v-if="isSubmitting"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Submitting...</span>
+                        <span v-else><i class="fa-solid fa-paper-plane mr-1"></i> Submit Comment</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-secondary bg-dark text-muted border-0 small text-center mb-0 py-3">
+            <i class="fa-solid fa-lock mr-1"></i> Comments are closed for this post.
+        </div>
+    }
+</section>
+
+<script type="module">
+    import { createApp } from 'https://cdn.jsdelivr.net/npm/petite-vue@0.4.1/dist/petite-vue.es.js';
+    createApp().mount('#commentForm');
+</script>
