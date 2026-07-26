@@ -14,5 +14,8 @@ namespace Dotnet10MvcApi.Models.Cms
 
         [Region(Title = "Author Name")]
         public StringField AuthorName { get; set; } = new();
+
+        [Region(Title = "Require Comment Moderation")]
+        public CheckField RequireModeration { get; set; } = new() { Value = true };
     }
 }

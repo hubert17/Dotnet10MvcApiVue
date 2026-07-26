@@ -82,6 +82,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     post1.Published = DateTime.Now.AddDays(-2);
 
                     post1.EnableComments = true;
+                    post1.RequireModeration.Value = true;
                     post1.Blocks.Add(new HtmlBlock
                     {
                         Body = @"<p class='lead text-light'>Welcome to our official platform engineering blog! This application is engineered as a unified ASP.NET Core monolith, serving static landing pages, reactive Vue 2.x single page applications, server-side rendered Razor MVC views, JWT-secured REST APIs, and dynamic Piranha CMS content simultaneously.</p>
@@ -124,6 +125,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     post2.AuthorName = "Bernard Gabon";
                     post2.Published = DateTime.Now.AddDays(-1);
                     post2.EnableComments = true;
+                    post2.RequireModeration.Value = true;
 
                     post2.Blocks.Add(new HtmlBlock
                     {

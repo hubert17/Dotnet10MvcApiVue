@@ -62,7 +62,8 @@ namespace Dotnet10MvcApi.Controllers.Cms
                 return Redirect($"/blogs/{slug}#comments");
             }
 
-            var savedComment = await _cmsService.SavePostCommentAsync(post.Id, authorName.Trim(), authorEmail.Trim(), commentBody.Trim(), authorUrl?.Trim());
+            var requireModeration = post.RequireModeration?.Value ?? true;
+            var savedComment = await _cmsService.SavePostCommentAsync(post.Id, authorName.Trim(), authorEmail.Trim(), commentBody.Trim(), authorUrl?.Trim(), requireModeration);
             if (savedComment != null)
             {
                 if (savedComment.IsApproved)

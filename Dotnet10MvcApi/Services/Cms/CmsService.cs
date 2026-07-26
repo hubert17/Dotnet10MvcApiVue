@@ -115,7 +115,7 @@ namespace Dotnet10MvcApi.Services.Cms
             }
         }
 
-        public async Task<PostComment?> SavePostCommentAsync(Guid postId, string author, string email, string body, string? url = null)
+        public async Task<PostComment?> SavePostCommentAsync(Guid postId, string author, string email, string body, string? url = null, bool requireModeration = true)
         {
             try
             {
@@ -125,6 +125,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     Email = email,
                     Body = body,
                     Url = url,
+                    IsApproved = !requireModeration,
                     Created = DateTime.Now
                 };
                 await _api.Posts.SaveCommentAsync(postId, comment);
