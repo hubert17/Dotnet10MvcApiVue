@@ -4,7 +4,7 @@ using Piranha.Extend.Fields;
 
 namespace Dotnet10MvcApi.Models.Cms.Blocks
 {
-    [BlockType(Name = "Hero Section", Category = "Content", Icon = "fas fa-star", Component = "hero-block")]
+    [BlockType(Name = "Hero Section", Category = "Content", Icon = "fas fa-star")]
     public class HeroBlock : Block
     {
         [Field(Title = "Badge / Eyebrow")]

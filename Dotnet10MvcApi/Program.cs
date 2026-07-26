@@ -80,6 +80,13 @@ builder.Services.AddAuthentication(options =>
 
 // 3. Register standard services and native OpenAPI
 builder.Services.AddControllersWithViews();
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-XSRF-TOKEN";
+    options.Cookie.Name = "XSRF-TOKEN";
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.HttpOnly = false;
+});
 builder.Services.AddHttpClient();
 builder.Services.AddOpenApi(options =>
 {
