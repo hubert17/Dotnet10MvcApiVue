@@ -15,7 +15,7 @@ namespace Dotnet10MvcApi.Models.Cms
         [Region(Title = "Author Name")]
         public StringField AuthorName { get; set; } = new();
 
-        [Region(Title = "Require Comment Moderation")]
+        [Region(Title = "Comment Moderation", Description = "Check this box to hold visitor comments in the moderation queue (/manager/comments) prior to publishing. Uncheck to allow comments to be auto-approved and displayed immediately upon submission.")]
         public CheckBoxField RequireModeration { get; set; } = new() { Value = true };
     }
 }
