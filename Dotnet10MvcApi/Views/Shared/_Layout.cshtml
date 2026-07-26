@@ -80,10 +80,6 @@
                             </a>
                             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownUser">
                                 <a class="dropdown-item" href="/account/ChangePassword">My Account</a>
-                                @if (User.IsInRole("admin"))
-                                {
-                                    <a class="dropdown-item" href="/account/ManageUsers">Manage Users</a>
-                                }
                                 <a class="dropdown-item" href="/Account/Logoff">Log Out</a>
                             </div>
                         </li>

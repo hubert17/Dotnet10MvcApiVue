@@ -1,6 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
 
+REM Set Development environment so appsettings.Development.json is loaded
+set "ASPNETCORE_ENVIRONMENT=Development"
+
 REM Set paths relative to batch script directory (current folder)
 set "PROJECT_DIR=%~dp0"
 

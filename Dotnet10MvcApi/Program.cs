@@ -116,6 +116,7 @@ builder.Services.AddOpenApi(options =>
 });
 
 builder.Services.AddScoped<TokenManager>();
+builder.Services.AddScoped<DevUserService>();
 
 var app = builder.Build();
 
