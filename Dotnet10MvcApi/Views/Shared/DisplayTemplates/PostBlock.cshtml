@@ -1,0 +1,29 @@
+@model Piranha.Extend.Blocks.PostBlock
+
+@if (Model.Body?.Post != null)
+{
+    <div class="cms-card my-3">
+        @if (Model.Body.Post.PrimaryImage.HasValue)
+        {
+            <a href="@Model.Body.Post.Permalink">
+                <img class="img-fluid" style="border-radius: 20px 20px 0 0; max-height: 200px; width: 100%; object-fit: cover;"
+                     src="@Url.Content(Model.Body.Post.PrimaryImage.Media?.PublicUrl)"
+                     alt="@Model.Body.Post.PrimaryImage.Media?.AltText" />
+            </a>
+        }
+        <div class="p-4">
+            @if (Model.Body.Post.Category != null)
+            {
+                <span class="cms-badge-category d-inline-block mb-2">@Model.Body.Post.Category.Title</span>
+            }
+            <h5 class="text-white font-weight-bold mb-2">@Model.Body.Post.Title</h5>
+            @if (!string.IsNullOrWhiteSpace(Model.Body.Post.Excerpt))
+            {
+                <p class="text-muted small mb-3">@Html.Raw(Model.Body.Post.Excerpt)</p>
+            }
+            <a href="@Model.Body.Post.Permalink" class="btn-cms-action btn btn-sm px-3">
+                Read more <i class="fa-solid fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+}

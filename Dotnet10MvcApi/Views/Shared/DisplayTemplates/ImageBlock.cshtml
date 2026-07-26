@@ -1,0 +1,8 @@
+@model Piranha.Extend.Blocks.ImageBlock
+
+@if (Model.Body != null && Model.Body.HasValue)
+{
+    <img class="img-fluid rounded my-3"
+         src="@Url.Content(Model.Body.Media?.PublicUrl)"
+         alt="@Model.Body.Media?.AltText" />
+}

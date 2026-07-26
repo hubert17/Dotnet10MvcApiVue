@@ -22,6 +22,7 @@ using Dotnet10MvcApi.Services.Cms;
 using Piranha;
 using Piranha.AttributeBuilder;
 using Piranha.Data.EF.SQLite;
+using Piranha.Manager.Editor;
 using Scalar.AspNetCore;
 using OpenApi = Microsoft.OpenApi;
 
@@ -127,13 +128,16 @@ builder.Services.AddScoped<CmsService>();
 // Configure Piranha CMS
 builder.Services.AddPiranha(options =>
 {
+    options.AddRazorRuntimeCompilation = true;
+
     var piranhaDbPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "piranha.db");
     options.UseEF<SQLiteDb>(db =>
         db.UseSqlite($"Data Source={piranhaDbPath}"));
     options.UseManager();
+    options.UseTinyMCE();
     options.UseMemoryCache();
     options.UseImageSharp();
-    options.UseFileStorage();
+    options.UseFileStorage(naming: Piranha.Local.FileStorageNaming.UniqueFolderNames);
 });
 
 var app = builder.Build();
@@ -181,7 +185,10 @@ app.UseAuthorization();
 // Enable Piranha CMS Middleware
 app.UsePiranha(options =>
 {
+    // Configure TinyMCE editor toolbar
+    EditorConfig.FromFile("editorconfig.json");
     options.UseManager();
+    options.UseTinyMCE();
 });
 
 // 6. Map controllers (APIs + MVC routing)

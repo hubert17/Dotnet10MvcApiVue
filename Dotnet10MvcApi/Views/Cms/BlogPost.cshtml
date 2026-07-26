@@ -65,57 +65,12 @@
     <div class="container" style="max-width: 860px;">
         <article class="cms-article-content text-light" style="font-size: 1.125rem; line-height: 1.85;">
             
-            <!-- 3. Body Paragraphs (Required) -->
-            @if (Model.Blocks != null && Model.Blocks.Any())
+            <!-- 3. Body Blocks -->
+            @foreach (var block in Model.Blocks)
             {
-                @foreach (var block in Model.Blocks)
-                {
-                    if (block is Dotnet10MvcApi.Models.Cms.Blocks.HeroBlock hero)
-                    {
-                        <div class="cms-hero-banner my-4 p-4 p-md-5 rounded-3 border text-center text-md-left position-relative overflow-hidden" 
-                             style="background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.2) 0%, rgba(6, 182, 212, 0.08) 50%, rgba(11, 15, 25, 0.8) 100%); border-color: rgba(99, 102, 241, 0.3) !important;">
-                            @if (hero.Badge != null && !string.IsNullOrWhiteSpace(hero.Badge.Value))
-                            {
-                                <span class="badge badge-pill px-3 py-2 mb-3 d-inline-block" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; font-weight: 600; border: 1px solid rgba(99, 102, 241, 0.4);">
-                                    <i class="fa-solid fa-sparkles mr-1"></i> @hero.Badge.Value
-                                </span>
-                            }
-                            @if (hero.Title != null && !string.IsNullOrWhiteSpace(hero.Title.Value))
-                            {
-                                <h2 class="text-white font-weight-bold mb-3">@hero.Title.Value</h2>
-                            }
-                            @if (hero.Subtitle != null && !string.IsNullOrWhiteSpace(hero.Subtitle.Value))
-                            {
-                                <p class="text-muted mb-4" style="line-height: 1.6;">@hero.Subtitle.Value</p>
-                            }
-                            @if (hero.ButtonText != null && !string.IsNullOrWhiteSpace(hero.ButtonText.Value))
-                            {
-                                <a href="@(hero.ButtonUrl == null || string.IsNullOrWhiteSpace(hero.ButtonUrl.Value) ? "#" : hero.ButtonUrl.Value)" class="btn btn-cms-action px-4 py-2 font-weight-semibold">
-                                    @hero.ButtonText.Value <i class="fa-solid fa-arrow-right ml-1"></i>
-                                </a>
-                            }
-                        </div>
-                    }
-                    else if (block is Piranha.Extend.Blocks.HtmlBlock html && html.Body != null && !string.IsNullOrWhiteSpace(html.Body.Value))
-                    {
-                        <div class="cms-block-html mb-4">
-                            @Html.Raw(html.Body.Value)
-                        </div>
-                    }
-                    else if (block is Piranha.Extend.Blocks.TextBlock text && text.Body != null && !string.IsNullOrWhiteSpace(text.Body.Value))
-                    {
-                        <div class="cms-block-text mb-4">
-                            @Html.Raw(text.Body.Value)
-                        </div>
-                    }
-                    else if (block is Piranha.Extend.Blocks.QuoteBlock quote && quote.Body != null && !string.IsNullOrWhiteSpace(quote.Body.Value))
-                    {
-                        <blockquote class="blockquote my-4 p-4 rounded" style="background: rgba(99, 102, 241, 0.08); border-left: 4px solid var(--cms-primary);">
-                            <p class="mb-0 text-white font-italic">@quote.Body.Value</p>
-                        </blockquote>
-                    }
-                }
+                @Html.DisplayFor(m => block, block.GetType().Name)
             }
+
 
             <!-- Footer Navigation -->
             <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top" style="border-color: var(--cms-border) !important;">

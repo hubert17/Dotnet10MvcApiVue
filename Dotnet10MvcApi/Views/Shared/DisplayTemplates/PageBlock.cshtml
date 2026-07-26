@@ -1,0 +1,25 @@
+@model Piranha.Extend.Blocks.PageBlock
+
+@if (Model.Body?.Page != null)
+{
+    <div class="cms-card my-3">
+        @if (Model.Body.Page.PrimaryImage.HasValue)
+        {
+            <a href="@Model.Body.Page.Permalink">
+                <img class="img-fluid" style="border-radius: 20px 20px 0 0; max-height: 200px; width: 100%; object-fit: cover;"
+                     src="@Url.Content(Model.Body.Page.PrimaryImage.Media?.PublicUrl)"
+                     alt="@Model.Body.Page.PrimaryImage.Media?.AltText" />
+            </a>
+        }
+        <div class="p-4">
+            <h5 class="text-white font-weight-bold mb-2">@Model.Body.Page.Title</h5>
+            @if (!string.IsNullOrWhiteSpace(Model.Body.Page.Excerpt))
+            {
+                <p class="text-muted small mb-3">@Html.Raw(Model.Body.Page.Excerpt)</p>
+            }
+            <a href="@Model.Body.Page.Permalink" class="btn-cms-action btn btn-sm px-3">
+                Read more <i class="fa-solid fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+}

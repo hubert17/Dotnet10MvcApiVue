@@ -1,0 +1,9 @@
+@model Piranha.Extend.Blocks.AudioBlock
+
+@if (Model.Body != null && Model.Body.HasValue)
+{
+    <audio class="w-100 my-3" controls>
+        <source src="@Url.Content(Model.Body.Media?.PublicUrl)">
+        Your browser does not support the audio tag.
+    </audio>
+}
