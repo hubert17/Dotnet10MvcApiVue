@@ -2,8 +2,10 @@
 
 @if (Model.Body != null && Model.Body.HasValue)
 {
-    <audio class="w-100 my-3" controls>
-        <source src="@Url.Content(Model.Body.Media?.PublicUrl)">
-        Your browser does not support the audio tag.
-    </audio>
+    <div class="text-center my-4 mx-auto" style="max-width: 600px;">
+        <audio class="w-100" controls>
+            <source src="@Url.Content(Model.Body.Media?.PublicUrl)">
+            Your browser does not support the audio tag.
+        </audio>
+    </div>
 }

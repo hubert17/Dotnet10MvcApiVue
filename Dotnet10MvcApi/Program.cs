@@ -168,7 +168,7 @@ builder.Services.AddPiranha(options =>
     options.UseTinyMCE();
     options.UseMemoryCache();
     options.UseImageSharp();
-    options.UseFileStorage(basePath: "wwwroot/cms/uploads", baseUrl: "~/cms/uploads/", naming: Piranha.Local.FileStorageNaming.UniqueFolderNames);
+    options.UseFileStorage(basePath: "wwwroot/cms/uploads/", baseUrl: "~/cms/uploads/", naming: Piranha.Local.FileStorageNaming.UniqueFolderNames);
 });
 
 // Register the Piranha Manager security bridge (LocalAuth ISecurity)
@@ -217,7 +217,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Ensure Anti-Forgery XSRF-TOKEN cookie is populated on all /manager requests
+// Ensure Anti-Forgery XSRF-TOKEN cookie & contrast fix CSS are populated on /manager requests
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/manager"))
@@ -232,6 +232,40 @@ app.Use(async (context, next) =>
                 SameSite = SameSiteMode.Lax,
                 Secure = context.Request.IsHttps
             });
+        }
+
+        if (!context.Request.Path.StartsWithSegments("/manager/api") &&
+            !context.Request.Path.StartsWithSegments("/manager/assets"))
+        {
+            var originalBodyStream = context.Response.Body;
+            using var memoryStream = new MemoryStream();
+            context.Response.Body = memoryStream;
+
+            await next();
+
+            if (context.Response.ContentType != null && context.Response.ContentType.Contains("text/html"))
+            {
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                using var reader = new StreamReader(memoryStream, Encoding.UTF8, leaveOpen: true);
+                var html = await reader.ReadToEndAsync();
+
+                const string contrastFix = "<style id='piranha-contrast-fix'>.text-light,.text-white,[class*='text-light'],[class*='text-white']{color:#334155!important;}</style>";
+                if (html.Contains("</head>"))
+                {
+                    html = html.Replace("</head>", $"{contrastFix}</head>");
+                }
+
+                var bytes = Encoding.UTF8.GetBytes(html);
+                context.Response.ContentLength = bytes.Length;
+                await originalBodyStream.WriteAsync(bytes, 0, bytes.Length);
+            }
+            else
+            {
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                await memoryStream.CopyToAsync(originalBodyStream);
+            }
+            context.Response.Body = originalBodyStream;
+            return;
         }
     }
     await next();

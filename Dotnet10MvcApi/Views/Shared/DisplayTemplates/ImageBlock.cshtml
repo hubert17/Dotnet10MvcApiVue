@@ -2,7 +2,9 @@
 
 @if (Model.Body != null && Model.Body.HasValue)
 {
-    <img class="img-fluid rounded my-3"
-         src="@Url.Content(Model.Body.Media?.PublicUrl)"
-         alt="@Model.Body.Media?.AltText" />
+    <div class="text-center my-4">
+        <img class="img-fluid rounded d-block mx-auto shadow"
+             src="@Url.Content(Model.Body.Media?.PublicUrl)"
+             alt="@(Model.Body.Media?.AltText ?? Model.Body.Media?.Filename)" />
+    </div>
 }

@@ -8,5 +8,6 @@
     { "title": "Lead", "tag": "p", "type": "block", "classes": "lead" },
     { "title": "Button Primary", "tag": "a", "type": "inline", "classes": "btn btn-primary" },
     { "title": "Button Light", "tag": "a", "type": "inline", "classes": "btn btn-light" }
-  ]
+  ],
+  "content_style": "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a; font-size: 16px; line-height: 1.6; } .text-light, .text-white, [class*='text-light'], [class*='text-white'] { color: #334155 !important; } code { background: #e2e8f0; color: #4f46e5; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }"
 }
