@@ -87,6 +87,30 @@ builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-XSRF-TOKEN";
 });
+
+// Wrap IAntiforgery in DI to bypass anti-forgery validation for /manager/api routes
+var originalAntiforgery = builder.Services.FirstOrDefault(d => d.ServiceType == typeof(IAntiforgery));
+if (originalAntiforgery != null)
+{
+    builder.Services.Remove(originalAntiforgery);
+    builder.Services.AddSingleton<IAntiforgery>(sp =>
+    {
+        IAntiforgery inner;
+        if (originalAntiforgery.ImplementationInstance != null)
+        {
+            inner = (IAntiforgery)originalAntiforgery.ImplementationInstance;
+        }
+        else if (originalAntiforgery.ImplementationFactory != null)
+        {
+            inner = (IAntiforgery)originalAntiforgery.ImplementationFactory(sp);
+        }
+        else
+        {
+            inner = (IAntiforgery)ActivatorUtilities.CreateInstance(sp, originalAntiforgery.ImplementationType!);
+        }
+        return new Dotnet10MvcApi.Services.BypassManagerAntiforgery(inner);
+    });
+}
 builder.Services.AddHttpClient();
 builder.Services.AddOpenApi(options =>
 {
