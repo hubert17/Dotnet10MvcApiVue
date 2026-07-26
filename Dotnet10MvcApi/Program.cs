@@ -140,6 +140,10 @@ builder.Services.AddPiranha(options =>
     options.UseFileStorage(naming: Piranha.Local.FileStorageNaming.UniqueFolderNames);
 });
 
+// Register the Piranha Manager security bridge (LocalAuth ISecurity)
+// This allows the manager's login/save/publish to delegate to our cookie auth
+builder.Services.AddScoped<Piranha.Manager.LocalAuth.ISecurity, Dotnet10MvcApi.Services.PiranhaManagerSecurity>();
+
 var app = builder.Build();
 
 // Initialize Piranha Content Types
