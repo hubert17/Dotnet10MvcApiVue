@@ -413,7 +413,7 @@ Thumbs.db
 # Unzipped Billboard CSV file (rely on compressed zip template)
 **/App_Data/BillboardTo2013.csv
 
-# Upload folders & CMS Media
+# Dynamic User Uploads & Runtime Media (Ignore uploads only; track static wwwroot/cms assets)
 **/UploadedFiles/
 **/wwwroot/UploadedImages/
 **/wwwroot/uploads/

@@ -183,6 +183,7 @@ using (var scope = app.Services.CreateScope())
     var api = scope.ServiceProvider.GetRequiredService<IApi>();
     App.Init(api);
     App.Blocks.Register<Dotnet10MvcApi.Models.Cms.Blocks.HeroBlock>();
+    App.Blocks.Register<Dotnet10MvcApi.Models.Cms.Blocks.YouTubeBlock>();
     new ContentTypeBuilder(api)
         .AddAssembly(typeof(Program).Assembly)
         .Build();

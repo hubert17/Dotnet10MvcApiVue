@@ -1,0 +1,23 @@
+@model Dotnet10MvcApi.Models.Cms.Blocks.YouTubeBlock
+@{
+    var embedUrl = Model.GetEmbedUrl();
+}
+
+@if (!string.IsNullOrWhiteSpace(embedUrl))
+{
+    <div class="my-4 text-center mx-auto" style="max-width: 850px;">
+        <div class="embed-responsive embed-responsive-16by9 rounded shadow-lg overflow-hidden border" style="border-color: rgba(255, 255, 255, 0.1) !important;">
+            <iframe class="embed-responsive-item"
+                    src="@embedUrl"
+                    title="@(Model.Caption?.Value ?? "YouTube Video")"
+                    allowfullscreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+        </div>
+        @if (Model.Caption != null && !string.IsNullOrWhiteSpace(Model.Caption.Value))
+        {
+            <p class="small text-muted mt-2 mb-0">
+                <i class="fab fa-youtube text-danger mr-1"></i> @Model.Caption.Value
+            </p>
+        }
+    </div>
+}
