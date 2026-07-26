@@ -19,6 +19,8 @@ using Dotnet10MvcApi.Models.Entities;
 using Dotnet10MvcApi.Services;
 using Dotnet10MvcApi.Models.Cms;
 using Dotnet10MvcApi.Services.Cms;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Http;
 using Piranha;
 using Piranha.AttributeBuilder;
 using Piranha.Data.EF.SQLite;
@@ -193,6 +195,26 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Ensure Anti-Forgery XSRF-TOKEN cookie is populated on all /manager requests
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/manager"))
+    {
+        var antiforgery = context.RequestServices.GetRequiredService<IAntiforgery>();
+        var tokens = antiforgery.GetAndStoreTokens(context);
+        if (!string.IsNullOrEmpty(tokens.RequestToken))
+        {
+            context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken, new CookieOptions
+            {
+                HttpOnly = false,
+                SameSite = SameSiteMode.Lax,
+                Secure = context.Request.IsHttps
+            });
+        }
+    }
+    await next();
+});
 
 // Enable Piranha CMS Middleware
 app.UsePiranha(options =>
