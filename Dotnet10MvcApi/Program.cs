@@ -17,6 +17,11 @@ using Dotnet10MvcApi.Helpers;
 using Dotnet10MvcApi.Models;
 using Dotnet10MvcApi.Models.Entities;
 using Dotnet10MvcApi.Services;
+using Dotnet10MvcApi.Models.Cms;
+using Dotnet10MvcApi.Services.Cms;
+using Piranha;
+using Piranha.AttributeBuilder;
+using Piranha.Data.EF.SQLite;
 using Scalar.AspNetCore;
 using OpenApi = Microsoft.OpenApi;
 
@@ -117,8 +122,32 @@ builder.Services.AddOpenApi(options =>
 
 builder.Services.AddScoped<TokenManager>();
 builder.Services.AddScoped<DevUserService>();
+builder.Services.AddScoped<CmsService>();
+
+// Configure Piranha CMS
+builder.Services.AddPiranha(options =>
+{
+    var piranhaDbPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "piranha.db");
+    options.UseEF<SQLiteDb>(db =>
+        db.UseSqlite($"Data Source={piranhaDbPath}"));
+    options.UseManager();
+    options.UseMemoryCache();
+    options.UseImageSharp();
+    options.UseFileStorage();
+});
 
 var app = builder.Build();
+
+// Initialize Piranha Content Types
+using (var scope = app.Services.CreateScope())
+{
+    var api = scope.ServiceProvider.GetRequiredService<IApi>();
+    App.Init(api);
+    App.Blocks.Register<Dotnet10MvcApi.Models.Cms.Blocks.HeroBlock>();
+    new ContentTypeBuilder(api)
+        .AddAssembly(typeof(Program).Assembly)
+        .Build();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -148,6 +177,12 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Enable Piranha CMS Middleware
+app.UsePiranha(options =>
+{
+    options.UseManager();
+});
 
 // 6. Map controllers (APIs + MVC routing)
 app.MapControllers();
@@ -218,6 +253,17 @@ using (var scope = app.Services.CreateScope())
         {
             Song.Seed(db, clearSongTable: false);
             Console.WriteLine("Seeded Songs table successfully from Billboard CSV.");
+        }
+
+        // Seed Piranha CMS initial content (Blogs & Articles)
+        try
+        {
+            var piranhaApi = scope.ServiceProvider.GetRequiredService<Piranha.IApi>();
+            CmsContentSeeder.SeedAsync(piranhaApi).GetAwaiter().GetResult();
+        }
+        catch (Exception piranhaEx)
+        {
+            Console.WriteLine($"Piranha CMS Startup Seeding Warning: {piranhaEx.Message}");
         }
     }
     catch (Exception ex)

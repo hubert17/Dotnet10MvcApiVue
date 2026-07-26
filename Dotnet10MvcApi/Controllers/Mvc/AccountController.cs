@@ -60,6 +60,8 @@ namespace Dotnet10MvcApi.Controllers.Mvc
                         new Claim(ClaimTypes.Role, user.Roles)
                     };
 
+                    AddPiranhaAdminClaimsIfAdmin(claims, user.Roles);
+
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                     var authProperties = new AuthenticationProperties
                     {
@@ -104,6 +106,8 @@ namespace Dotnet10MvcApi.Controllers.Mvc
                     new Claim(ClaimTypes.Role, devUser.Role)
                 };
 
+                AddPiranhaAdminClaimsIfAdmin(claims, devUser.Role);
+
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties
                 {
@@ -125,6 +129,30 @@ namespace Dotnet10MvcApi.Controllers.Mvc
 
             TempData["alert"] = "Invalid username or password";
             return RedirectToAction("Login", new { ReturnUrl = returnUrl });
+        }
+
+        [AllowAnonymous]
+        public IActionResult AccessDenied(string? returnUrl = null)
+        {
+            ViewBag.ReturnUrl = returnUrl;
+            return View();
+        }
+
+        private static void AddPiranhaAdminClaimsIfAdmin(List<Claim> claims, string role)
+        {
+            if (!string.IsNullOrWhiteSpace(role) && role.Equals("admin", StringComparison.OrdinalIgnoreCase))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "admin"));
+                claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+                try
+                {
+                    foreach (var permission in Piranha.Manager.Permission.All())
+                    {
+                        claims.Add(new Claim(permission, permission));
+                    }
+                }
+                catch { }
+            }
         }
 
         public async Task<IActionResult> Logoff()

@@ -1,0 +1,30 @@
+@{
+    ViewBag.Title = "Access Denied";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+
+<div class="card shadow-lg border-0 rounded-lg">
+    <div class="card-header bg-danger text-white text-center py-4">
+        <h3 class="font-weight-bold mb-0"><i class="fas fa-exclamation-triangle mr-2"></i> Access Denied</h3>
+    </div>
+    <div class="card-body p-4 p-md-5 text-center">
+        <p class="lead text-secondary mb-3">
+            You do not have administrative permissions to access this area.
+        </p>
+        @if (!string.IsNullOrEmpty(ViewBag.ReturnUrl))
+        {
+            <p class="text-muted mb-4">Target path: <code>@ViewBag.ReturnUrl</code></p>
+        }
+        <p class="text-muted mb-4">
+            Please log in with an Administrator account (username: <code>admin</code>) to access the Piranha CMS Manager.
+        </p>
+        <div class="d-flex justify-content-center">
+            <a href="/Account/Login?ReturnUrl=@(System.Web.HttpUtility.UrlEncode(ViewBag.ReturnUrl ?? "/manager"))" class="btn btn-primary px-4 mr-2">
+                <i class="fas fa-sign-in-alt mr-1"></i> Log In as Admin
+            </a>
+            <a href="/" class="btn btn-outline-secondary px-4">
+                <i class="fas fa-home mr-1"></i> Return Home
+            </a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,30 @@
+@model Dotnet10MvcApi.Models.Cms.StandardPage
+@{
+    ViewBag.Title = Model.Title;
+    Layout = "~/Views/Shared/_CmsLayout.cshtml";
+}
+
+<div class="py-5" style="background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, rgba(11, 15, 25, 0) 70%);">
+    <div class="container">
+        <h1 class="display-4 font-weight-bold text-white mb-2">@Model.Title</h1>
+        @if (Model.Subtitle != null && !string.IsNullOrWhiteSpace(Model.Subtitle.Value))
+        {
+            <p class="lead text-muted" style="max-width: 760px;">@Model.Subtitle.Value</p>
+        }
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <article class="cms-article-container">
+                <div class="page-body">
+                    @foreach (var block in Model.Blocks)
+                    {
+                        @Html.DisplayFor(m => block)
+                    }
+                </div>
+            </article>
+        </div>
+    </div>
+</div>

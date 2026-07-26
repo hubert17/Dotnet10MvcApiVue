@@ -1,0 +1,129 @@
+@model Dotnet10MvcApi.Models.Cms.BlogPost
+@{
+    ViewBag.Title = Model.Title;
+    Layout = "~/Views/Shared/_CmsLayout.cshtml";
+
+    var hasCategory = Model.Category != null && !string.IsNullOrWhiteSpace(Model.Category.Title);
+    var hasSubtitle = Model.Subtitle != null && !string.IsNullOrWhiteSpace(Model.Subtitle.Value);
+    var hasAuthor = Model.AuthorName != null && !string.IsNullOrWhiteSpace(Model.AuthorName.Value);
+    var hasDate = Model.Published.HasValue;
+}
+
+<!-- Article Header -->
+<header class="py-5" style="background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.12) 0%, rgba(11, 15, 25, 0) 75%); border-bottom: 1px solid var(--cms-border);">
+    <div class="container" style="max-width: 860px;">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb bg-transparent p-0 mb-0 small">
+                <li class="breadcrumb-item"><a href="/" class="text-secondary"><i class="fa-solid fa-house mr-1"></i> Home</a></li>
+                <li class="breadcrumb-item"><a href="/blogs" class="text-primary">Blogs</a></li>
+                <li class="breadcrumb-item active text-muted text-truncate" style="max-width: 250px;" aria-current="page">@Model.Title</li>
+            </ol>
+        </nav>
+
+        <!-- Optional Category Badge -->
+        @if (hasCategory)
+        {
+            <span class="cms-badge-category mb-3 d-inline-block">
+                <i class="fa-solid fa-tag mr-1"></i> @Model.Category.Title
+            </span>
+        }
+
+        <!-- 1. Headline (Required) -->
+        <h1 class="display-4 font-weight-bold text-white mb-3" style="letter-spacing: -0.02em; line-height: 1.2;">@Model.Title</h1>
+
+        <!-- 2. Introduction (Overview - Required) -->
+        @if (hasSubtitle)
+        {
+            <p class="lead text-light mb-4" style="font-size: 1.25rem; line-height: 1.6; opacity: 0.9;">@Model.Subtitle.Value</p>
+        }
+
+        <!-- Optional Author & Date Metadata Bar -->
+        @if (hasAuthor || hasDate)
+        {
+            <div class="d-flex align-items-center text-muted small pt-3 border-top" style="border-color: var(--cms-border) !important;">
+                @if (hasAuthor)
+                {
+                    <div class="d-flex align-items-center mr-4">
+                        <div class="avatar-circle mr-2" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #06b6d4); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 13px;">
+                            @(Model.AuthorName.Value.Substring(0, Math.Min(2, Model.AuthorName.Value.Length)).ToUpper())
+                        </div>
+                        <span class="text-white font-weight-medium">@Model.AuthorName.Value</span>
+                    </div>
+                }
+                @if (hasDate)
+                {
+                    <span><i class="fa-regular fa-calendar-alt mr-1 text-primary"></i> @Model.Published.Value.ToString("MMMM dd, yyyy")</span>
+                }
+            </div>
+        }
+    </div>
+</header>
+
+<!-- Article Reader Content -->
+<main class="py-5">
+    <div class="container" style="max-width: 860px;">
+        <article class="cms-article-content text-light" style="font-size: 1.125rem; line-height: 1.85;">
+            
+            <!-- 3. Body Paragraphs (Required) -->
+            @if (Model.Blocks != null && Model.Blocks.Any())
+            {
+                @foreach (var block in Model.Blocks)
+                {
+                    if (block is Dotnet10MvcApi.Models.Cms.Blocks.HeroBlock hero)
+                    {
+                        <div class="cms-hero-banner my-4 p-4 p-md-5 rounded-3 border text-center text-md-left position-relative overflow-hidden" 
+                             style="background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.2) 0%, rgba(6, 182, 212, 0.08) 50%, rgba(11, 15, 25, 0.8) 100%); border-color: rgba(99, 102, 241, 0.3) !important;">
+                            @if (hero.Badge != null && !string.IsNullOrWhiteSpace(hero.Badge.Value))
+                            {
+                                <span class="badge badge-pill px-3 py-2 mb-3 d-inline-block" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; font-weight: 600; border: 1px solid rgba(99, 102, 241, 0.4);">
+                                    <i class="fa-solid fa-sparkles mr-1"></i> @hero.Badge.Value
+                                </span>
+                            }
+                            @if (hero.Title != null && !string.IsNullOrWhiteSpace(hero.Title.Value))
+                            {
+                                <h2 class="text-white font-weight-bold mb-3">@hero.Title.Value</h2>
+                            }
+                            @if (hero.Subtitle != null && !string.IsNullOrWhiteSpace(hero.Subtitle.Value))
+                            {
+                                <p class="text-muted mb-4" style="line-height: 1.6;">@hero.Subtitle.Value</p>
+                            }
+                            @if (hero.ButtonText != null && !string.IsNullOrWhiteSpace(hero.ButtonText.Value))
+                            {
+                                <a href="@(hero.ButtonUrl == null || string.IsNullOrWhiteSpace(hero.ButtonUrl.Value) ? "#" : hero.ButtonUrl.Value)" class="btn btn-cms-action px-4 py-2 font-weight-semibold">
+                                    @hero.ButtonText.Value <i class="fa-solid fa-arrow-right ml-1"></i>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else if (block is Piranha.Extend.Blocks.HtmlBlock html && html.Body != null && !string.IsNullOrWhiteSpace(html.Body.Value))
+                    {
+                        <div class="cms-block-html mb-4">
+                            @Html.Raw(html.Body.Value)
+                        </div>
+                    }
+                    else if (block is Piranha.Extend.Blocks.TextBlock text && text.Body != null && !string.IsNullOrWhiteSpace(text.Body.Value))
+                    {
+                        <div class="cms-block-text mb-4">
+                            @Html.Raw(text.Body.Value)
+                        </div>
+                    }
+                    else if (block is Piranha.Extend.Blocks.QuoteBlock quote && quote.Body != null && !string.IsNullOrWhiteSpace(quote.Body.Value))
+                    {
+                        <blockquote class="blockquote my-4 p-4 rounded" style="background: rgba(99, 102, 241, 0.08); border-left: 4px solid var(--cms-primary);">
+                            <p class="mb-0 text-white font-italic">@quote.Body.Value</p>
+                        </blockquote>
+                    }
+                }
+            }
+
+            <!-- Footer Navigation -->
+            <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top" style="border-color: var(--cms-border) !important;">
+                <a href="/blogs" class="btn btn-cms-outline btn-sm">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Back to Blogs
+                </a>
+                <span class="text-muted small">Dotnet10 Platform Insights</span>
+            </div>
+        </article>
+    </div>
+</main>

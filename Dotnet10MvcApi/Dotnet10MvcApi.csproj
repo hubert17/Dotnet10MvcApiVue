@@ -15,11 +15,19 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.16.11" />
     <PackageReference Include="System.Data.OleDb" Version="10.0.9" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.9" />
+    <PackageReference Include="Piranha" Version="12.0.0" />
+    <PackageReference Include="Piranha.AspNetCore" Version="12.0.0" />
+    <PackageReference Include="Piranha.AttributeBuilder" Version="12.0.0" />
+    <PackageReference Include="Piranha.Manager" Version="12.0.0" />
+    <PackageReference Include="Piranha.Data.EF.SQLite" Version="12.0.0" />
+    <PackageReference Include="Piranha.ImageSharp" Version="12.0.0" />
+    <PackageReference Include="Piranha.Local.FileStorage" Version="12.0.0" />
   </ItemGroup>
 
 </Project>

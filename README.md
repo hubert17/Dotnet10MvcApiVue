@@ -1,18 +1,26 @@
-# Modernized .NET 10 MVC & Web API
+# Modernized .NET 10 MVC, Web API & Piranha CMS
 
-This project is a modern port and upgrade of the legacy SharpDevelop MVC 4 application to **ASP.NET Core (.NET 10.0)**. It serves as a unified **Modern Layered Monolith** combining server-rendered Razor MVC views with secure JSON Web Token (JWT) REST APIs.
+This project is a modern port and upgrade of the legacy SharpDevelop MVC 4 application to **ASP.NET Core (.NET 10.0)**. It serves as a unified **Modern Layered Monolith** combining server-rendered Razor MVC views, reactive Vue 2.x SPAs, secure REST Web APIs, and an integrated **Piranha CMS (v12)** engine.
 
 ---
 
 ## 🚀 Key Features & Architecture
 
 *   **Modern Framework (.NET 10.0):** Built on **ASP.NET Core 10.0** utilizing a clean controller-based layered monolith architecture.
-*   **Unified All-In-One Monolith:** A single-project "one-stop shop" that hosts 4 distinct web paradigms out of a single .NET process:
+*   **Unified All-In-One Monolith:** A single-project "one-stop shop" that hosts 5 distinct web paradigms out of a single .NET process:
     1.  **Static Landing Page (`/`):** Glassmorphic entry dashboard served from `wwwroot/index.html`.
     2.  **Vue 2.x SPA (`/app`):** Client-side Single Page App served from `wwwroot/app/index.html` using native ES modules, Vuetify, Vuex, and Vue Router.
     3.  **Server-Rendered MVC (`/home`):** Classic Razor view controllers (`Controllers/Mvc`) enhanced with `petite-vue`.
     4.  **RESTful Web APIs (`/api/...`):** Controller-based API endpoints (`Controllers/Api`) secured with JWT Bearer authentication.
-*   **MS Access Database Provider (Jet / EF Core):** Integrates `EntityFrameworkCore.Jet` targeting an MS Access database file (`MyAccessDb.mdb`). Structured for easy future migration to **PostgreSQL**.
+    5.  **Piranha CMS Engine (`/blogs`, `/articles`, `/manager`):** Integrated **Piranha CMS v12** serving dynamic blogs, technical articles, custom block types (`HeroBlock`), and the admin manager portal.
+*   **Piranha CMS Integration:**
+    *   **Public Content Publishing:** Dedicated elegant dark-themed layout (`_CmsLayout.cshtml`) for `/blogs` and `/articles`.
+    *   **Custom Block Architecture:** High-impact `HeroBlock` with custom Razor `DisplayTemplates`.
+    *   **Streamlined Article Layout:** Clean 5-part article design (Headline, Introduction overview, Body paragraphs/subheadings, Conclusion summary, and Action CTA card).
+    *   **Admin Manager Portal:** Integrated management portal at `/manager` with seamless Admin role claims integration (`Piranha.Manager.Permission.All()`).
+*   **MS Access Database Provider (Jet / EF Core) & SQLite:**
+    *   Relational database uses `EntityFrameworkCore.Jet` targeting MS Access (`MyAccessDb.mdb`). Structured for easy future migration to **PostgreSQL**.
+    *   Piranha CMS uses `Piranha.Data.EF.SQLite` targeting `App_Data/piranha.db`.
     *   **`#Dual` Table Engine Support:** Automatically initializes and seeds the required single-row `[#Dual]` table on startup to support Jet SQL scalar evaluations (such as LINQ `.Any()`).
     *   **High-Speed Bulk Seeding:** Inserts 10,000+ Billboard dataset records in **under 2 seconds** using parameterized raw ADO.NET SQL commands executed in a single transaction (bypassing EF Core change-tracking overhead).
 *   **Hybrid Dual Authentication Pipeline:**
@@ -23,9 +31,6 @@ This project is a modern port and upgrade of the legacy SharpDevelop MVC 4 appli
     *   **HTML-First Views:** Standard HTML5 markup with Bootstrap 4 classes, using Razor syntax strictly for control flow and model values instead of legacy `@Html` helper abstractions.
     *   **CDN Asset Delivery:** All third-party front-end libraries (Bootstrap 4, Font Awesome, Bootbox, Petite-Vue, Vue 2, Vuetify) are loaded directly via **jsDelivr CDN** (`cdn.jsdelivr.net`).
     *   **Lightweight Reactivity:** Client-side interactivity and form feedback powered by **petite-vue**.
-*   **Utilities & Services:**
-    *   **Async Email Service:** Dispatch HTML emails with attachment handling via `IFormFile`.
-    *   **Image Processing:** Automatic image scaling, EXIF orientation correction, and thumbnail generation using GDI+ (`System.Drawing.Common`).
 
 ---
 
@@ -55,6 +60,7 @@ The project includes a launch script at `Dotnet10MvcApi/run-debug.bat`:
 Dotnet10MvcApi/
 ├── App_Data/
 │   ├── MyAccessDb.mdb               # MS Access database file
+│   ├── piranha.db                   # Piranha CMS SQLite database file
 │   └── BillboardTo2013.zip          # Billboard CSV dataset zip
 ├── Controllers/
 │   ├── Api/                         # REST API Controllers (JSON & JWT Auth)
@@ -71,15 +77,28 @@ Dotnet10MvcApi/
 ├── Helpers/
 │   └── ImageUploadExtension.cs      # GDI+ image scaling & thumbnail generator
 ├── Models/
+│   ├── Cms/                         # Piranha CMS Page, Post & Block Models
+│   │   ├── Blocks/                  # Custom block types (HeroBlock)
+│   │   ├── ArticleArchivePage.cs
+│   │   ├── ArticlePost.cs
+│   │   ├── BlogArchivePage.cs
+│   │   └── BlogPost.cs
 │   ├── Dtos/                        # Data Transfer Objects for API requests/responses
 │   ├── Entities/                    # EF Core Data Entities (Product, Song, UserAccount, RefreshToken)
 │   └── ViewModels/                  # Razor View models
 ├── Services/
+│   ├── Cms/
+│   │   └── CmsContentSeeder.cs      # Initial Piranha CMS pages and posts seeder
 │   ├── EmailService.cs              # SMTP mailer service
 │   └── TokenManager.cs              # JWT generation, validation & token revocation service
-├── Views/                           # Razor HTML View templates
+├── Views/
+│   ├── Cms/                         # Piranha CMS Razor view templates
+│   ├── Shared/
+│   │   ├── DisplayTemplates/        # Razor DisplayTemplates for CMS Blocks (HeroBlock, HtmlBlock)
+│   │   └── _CmsLayout.cshtml        # Shared dark glassmorphic CMS layout template
+│   └── ...                          # MVC Razor HTML View templates
 ├── wwwroot/                         # Public static files, site CSS, glassmorphic homepage
-├── Program.cs                       # Application entry point, DB check/seed, auth pipeline
+├── Program.cs                       # Application entry point, DB check/seed, Piranha CMS registration
 ├── run-debug.bat                    # x64 architecture launcher script
 └── appsettings.json                 # DB connection string & JWT key parameters
 ```
@@ -109,5 +128,10 @@ dotnet run --project Dotnet10MvcApi --arch x64
 
 ### Application Endpoints
 *   **Web Portal Homepage:** [http://localhost:5071](http://localhost:5071)
+*   **Vue 2.x SPA:** [http://localhost:5071/app](http://localhost:5071/app)
+*   **MVC Portal:** [http://localhost:5071/home](http://localhost:5071/home)
+*   **Piranha CMS Blogs:** [http://localhost:5071/blogs](http://localhost:5071/blogs)
+*   **Piranha CMS Articles:** [http://localhost:5071/articles](http://localhost:5071/articles)
+*   **Piranha CMS Manager Portal:** [http://localhost:5071/manager](http://localhost:5071/manager)
 *   **Scalar Interactive API Console:** [http://localhost:5071/scalar/v1](http://localhost:5071/scalar/v1) (or [http://localhost:5071/swagger](http://localhost:5071/swagger))
 *   **OpenAPI Document Spec:** [http://localhost:5071/openapi/v1.json](http://localhost:5071/openapi/v1.json)

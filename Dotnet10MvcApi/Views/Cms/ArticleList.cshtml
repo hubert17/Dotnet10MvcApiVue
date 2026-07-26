@@ -1,0 +1,80 @@
+@model IEnumerable<Dotnet10MvcApi.Models.Cms.ArticlePost>
+@{
+    ViewBag.Title = "Featured Articles";
+    Layout = "~/Views/Shared/_CmsLayout.cshtml";
+}
+
+<div class="cms-hero text-center mb-4">
+    <div class="container">
+        <span class="badge badge-pill badge-info px-3 py-2 mb-3" style="background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.3);">
+            <i class="fa-solid fa-book-open mr-1 text-info"></i> Technical Guides &amp; Architecture
+        </span>
+        <h1 class="cms-hero-title" style="background: linear-gradient(135deg, #ffffff 30%, #67e8f9 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            Articles &amp; Reference Models
+        </h1>
+        <p class="cms-hero-desc mx-auto">
+            Comprehensive reference architectures, performance optimizations, and technical tutorials.
+        </p>
+    </div>
+</div>
+
+<div class="container pb-5">
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var article in Model)
+            {
+                <div class="col-lg-6 mb-4">
+                    <div class="cms-card h-100 p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="cms-badge-article">
+                                <i class="fa-solid fa-layer-group mr-1"></i> @(article.Category?.Title ?? "Guide")
+                            </span>
+                            <small class="text-muted">
+                                <i class="fa-regular fa-clock mr-1"></i>
+                                @(article.ReadingTime?.Value ?? "5 mins") read
+                            </small>
+                        </div>
+                        
+                        <h3 class="h4 font-weight-bold text-white mb-2">
+                            <a href="/articles/@article.Slug" class="text-white text-decoration-none">
+                                @article.Title
+                            </a>
+                        </h3>
+                        
+                        @if (!string.IsNullOrWhiteSpace(article.Excerpt))
+                        {
+                            <p class="text-muted flex-grow-1" style="font-size: 0.95rem; line-height: 1.6;">
+                                @article.Excerpt
+                            </p>
+                        }
+                        else if (article.Subtitle != null && !string.IsNullOrWhiteSpace(article.Subtitle.Value))
+                        {
+                            <p class="text-muted flex-grow-1" style="font-size: 0.95rem; line-height: 1.6;">
+                                @article.Subtitle.Value
+                            </p>
+                        }
+
+                        <div class="pt-3 mt-auto border-top d-flex justify-content-between align-items-center" style="border-color: var(--cms-border) !important;">
+                            <span class="small text-muted">
+                                <i class="fa-regular fa-calendar-alt mr-1 text-info"></i> @(article.Published?.ToString("MMM dd, yyyy") ?? "Published")
+                            </span>
+                            <a href="/articles/@article.Slug" class="btn btn-cms-action btn-sm">
+                                Read Guide <i class="fa-solid fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="cms-card p-5 text-center my-4">
+            <i class="fa-solid fa-newspaper fa-3x text-muted mb-3"></i>
+            <h4 class="text-white font-weight-bold">No Articles Available</h4>
+            <p class="text-muted mb-3">Articles will appear here once seeded or created in the CMS Manager.</p>
+            <a href="/manager" class="btn btn-cms-action btn-sm px-4">Go to Manager</a>
+        </div>
+    }
+</div>

@@ -18,9 +18,11 @@ These instructions govern all future modifications, tests, and task executions p
 
 ---
 
-## 🗄️ Database & Queries (MS Access Jet / EF Core)
+## 🗄️ Database & Queries (MS Access Jet / SQLite / EF Core)
 
-*   **Database Provider:** The project uses `EntityFrameworkCore.Jet` for database connections. Maintain compatibility for easy future shifts to **PostgreSQL**. Do not use MS SQL Server.
+*   **Database Providers:** 
+    *   Application relational data uses `EntityFrameworkCore.Jet` targeting MS Access (`MyAccessDb.mdb`). Maintain compatibility for easy future shifts to **PostgreSQL**. Do not use MS SQL Server.
+    *   Piranha CMS content data uses `Piranha.Data.EF.SQLite` targeting `App_Data/piranha.db`.
 *   **Scalar Queries (#Dual):** The Jet provider translates LINQ evaluations like `.Any()` into SQL containing `FROM #Dual`. 
     *   **Rule:** The database must contain a helper table named `[#Dual]` with exactly one row. This table is automatically checked and seeded on startup in `Program.cs`. Do not delete or alter this table.
 *   **Bulk Ingest Seeding:** Row-by-row EF Core change-tracked inserts for thousands of records are too slow for the Jet database engine.
@@ -28,7 +30,7 @@ These instructions govern all future modifications, tests, and task executions p
 
 ---
 
-## 🔐 Hybrid Authentication Model
+## 🔐 Hybrid Authentication & Piranha CMS Security
 
 *   **Dual Authentication Schemas:** The project registers both Cookie and JWT Bearer schemes in `Program.cs`. The default scheme is Cookies.
     *   **MVC Pages:** Use standard `[Authorize]` attributes (which default to redirection to `/Account/Login`).
@@ -36,6 +38,7 @@ These instructions govern all future modifications, tests, and task executions p
         ```csharp
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         ```
+    *   **Piranha CMS Manager Portal:** Accessible at `/manager`. Administrators (`admin`) logging in are automatically granted Piranha Manager security claims (`Piranha.Manager.Permission.All()`).
 
 ---
 
@@ -78,11 +81,12 @@ These instructions govern all future modifications, tests, and task executions p
 
 ## 🏗️ Multi-Paradigm Single-Project Architecture
 
-*   **Unified Monolith Design:** This project is a single-project "one-stop shop" that hosts 4 web paradigms simultaneously out of a single ASP.NET Core process:
+*   **Unified Monolith Design:** This project is a single-project "one-stop shop" that hosts multi-paradigm web experiences simultaneously out of a single ASP.NET Core process, now integrated with **Piranha CMS**:
     1.  `/` -> Static Web Root Landing Page (`wwwroot/index.html`).
     2.  `/app` -> Vue 2.x Single Page Application (`wwwroot/app/index.html` via ES Modules).
     3.  `/home` -> Server-Rendered Razor MVC Views (`HomeController`).
     4.  `/api/...` -> Controller-based REST APIs with JWT Bearer security.
+    5.  `/blogs`, `/articles`, `/manager` -> **Piranha CMS v12**: Public editorial content engine for blogs, technical articles, custom block types (`HeroBlock`), and full headless/SSR admin management portal (`/manager`).
     *   **Rule:** Maintain this unified monolith design. Do not split these paradigms into separate projects or introduce node/webpack build servers.
 
 *   **User Terminology & Domain Concepts:** When the user refers to the following terms, map them strictly to their corresponding application paradigm:
@@ -90,6 +94,7 @@ These instructions govern all future modifications, tests, and task executions p
     *   **SPA** or **app:** The Vue 2.x Single Page Application (`/app` or `wwwroot/app/index.html`), a zero-node, zero-build app using native ES modules.
     *   **MVC** or **SSR:** ASP.NET Core MVC Razor server-side rendered views (`/home`), with lightweight client-side reactivity powered by `petite-vue`.
     *   **API** or **WebAPI:** Controller-based REST Web API endpoints (`/api/...`) with JWT Bearer authentication.
+    *   **CMS** or **Piranha**: Piranha CMS v12 content engine serving public blogs (`/blogs`), technical articles (`/articles`), custom blocks (`HeroBlock`), and the admin manager portal (`/manager`).
 
 ---
 

@@ -1,0 +1,78 @@
+@model IEnumerable<Dotnet10MvcApi.Models.Cms.BlogPost>
+@{
+    ViewBag.Title = "Blog Hub";
+    Layout = "~/Views/Shared/_CmsLayout.cshtml";
+}
+
+<div class="cms-hero text-center mb-4">
+    <div class="container">
+        <span class="badge badge-pill badge-primary px-3 py-2 mb-3" style="background: rgba(99, 102, 241, 0.2); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.3);">
+            <i class="fa-solid fa-sparkles mr-1 text-warning"></i> Platform Stories &amp; Updates
+        </span>
+        <h1 class="cms-hero-title">Developer Blog &amp; Insights</h1>
+        <p class="cms-hero-desc mx-auto">
+            Discover technical deep dives, engineering updates, and architectural reference models from our team.
+        </p>
+    </div>
+</div>
+
+<div class="container pb-5">
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var post in Model)
+            {
+                <div class="col-lg-6 mb-4">
+                    <div class="cms-card h-100 p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="cms-badge-category">
+                                <i class="fa-solid fa-tag mr-1"></i> @(post.Category?.Title ?? "General")
+                            </span>
+                            <small class="text-muted">
+                                <i class="fa-regular fa-calendar-alt mr-1"></i>
+                                @(post.Published?.ToString("MMM dd, yyyy") ?? "Draft")
+                            </small>
+                        </div>
+                        
+                        <h3 class="h4 font-weight-bold text-white mb-2">
+                            <a href="/blogs/@post.Slug" class="text-white text-decoration-none">
+                                @post.Title
+                            </a>
+                        </h3>
+                        
+                        @if (!string.IsNullOrWhiteSpace(post.Excerpt))
+                        {
+                            <p class="text-muted flex-grow-1" style="font-size: 0.95rem; line-height: 1.6;">
+                                @post.Excerpt
+                            </p>
+                        }
+                        else if (post.Subtitle != null && !string.IsNullOrWhiteSpace(post.Subtitle.Value))
+                        {
+                            <p class="text-muted flex-grow-1" style="font-size: 0.95rem; line-height: 1.6;">
+                                @post.Subtitle.Value
+                            </p>
+                        }
+
+                        <div class="pt-3 mt-auto border-top d-flex justify-content-between align-items-center" style="border-color: var(--cms-border) !important;">
+                            <span class="small text-muted">
+                                <i class="fa-solid fa-user-astronaut mr-1 text-primary"></i> @(post.AuthorName?.Value ?? "Editor")
+                            </span>
+                            <a href="/blogs/@post.Slug" class="btn btn-cms-action btn-sm">
+                                Read Story <i class="fa-solid fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="cms-card p-5 text-center my-4">
+            <i class="fa-solid fa-folder-open fa-3x text-muted mb-3"></i>
+            <h4 class="text-white font-weight-bold">No Blog Posts Yet</h4>
+            <p class="text-muted mb-3">Posts will appear here once created or seeded in the CMS Manager.</p>
+            <a href="/manager" class="btn btn-cms-action btn-sm px-4">Go to Manager</a>
+        </div>
+    }
+</div>
