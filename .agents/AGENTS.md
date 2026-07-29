@@ -108,14 +108,16 @@ These instructions govern all future modifications, tests, and task executions p
     1.  `/` -> Static Web Root Landing Page (`wwwroot/index.html`).
     2.  `/app` -> Vue 2.x Single Page Application (`wwwroot/app/index.html` via ES Modules).
     3.  `/home` -> Server-Rendered Razor MVC Views (`HomeController`).
-    4.  `/api/...` -> Controller-based REST APIs with JWT Bearer security.
-    5.  `/blogs`, `/articles`, `/manager` -> **Piranha CMS v12**: Public editorial content engine for blogs, technical articles, custom block types (`HeroBlock`), and full headless/SSR admin management portal (`/manager`).
+    4.  `/blazor` -> Interactive Blazor Server App (`Blazor/App.razor` with MudBlazor UI & SignalR).
+    5.  `/api/...` -> Controller-based REST APIs with JWT Bearer security.
+    6.  `/blogs`, `/articles`, `/manager` -> **Piranha CMS v12**: Public editorial content engine for blogs, technical articles, custom block types (`HeroBlock`), and full headless/SSR admin management portal (`/manager`).
     *   **Rule:** Maintain this unified monolith design. Do not split these paradigms into separate projects or introduce node/webpack build servers.
 
 *   **User Terminology & Domain Concepts:** When the user refers to the following terms, map them strictly to their corresponding application paradigm:
     *   **Landing Page:** The static web root landing page (`/` or `wwwroot/index.html`).
     *   **SPA** or **app:** The Vue 2.x Single Page Application (`/app` or `wwwroot/app/index.html`), a zero-node, zero-build app using native ES modules.
     *   **MVC** or **SSR:** ASP.NET Core MVC Razor server-side rendered views (`/home`), with lightweight client-side reactivity powered by `petite-vue`.
+    *   **Blazor** or **Blazor Server:** Interactive Blazor Server components (`/blazor`), MudBlazor UI controls, state management, and real-time SignalR circuit state preservation.
     *   **API** or **WebAPI:** Controller-based REST Web API endpoints (`/api/...`) with JWT Bearer authentication.
     *   **CMS** or **Piranha**: Piranha CMS v12 content engine serving public blogs (`/blogs`), technical articles (`/articles`), custom blocks (`HeroBlock`), and the admin manager portal (`/manager`).
 
@@ -125,6 +127,7 @@ These instructions govern all future modifications, tests, and task executions p
            - **Static Web Root (`/`)**: Static landing pages or marketing content.
            - **Vue 2 SPA (`/app`)**: Dynamic, zero-build single-page applications for high-concurrency client-side app workflows.
            - **Razor MVC (`/home`)**: Server-rendered HTML forms, traditional page-based workflows, or admin views with `petite-vue` reactivity.
+           - **Blazor Server (`/blazor`)**: Rich C# interactive backoffice workflows, MudBlazor UI dashboards, and real-time SignalR components.
            - **REST Web APIs (`/api/...`)**: Controller-based JSON endpoints with JWT Bearer authentication.
            - **Piranha CMS (`/blogs`, `/articles`, `/manager`)**: Editorial blog posts, articles, CMS block content, and admin management.
         2. **Mindful Architectural Discussion:** Discuss the proposed paradigm recommendation mindfully with the System Architect before proceeding with code implementation.
