@@ -38,13 +38,6 @@ wwwroot/
     ├── index.html
     └── src/router.js
 ```
-### ASP.NET Core Server Configuration (`Program.cs`)
-```csharp
-// Serve index.html for each copy-pasted virtual SPA fallback route
-app.MapFallbackToFile("/app3/{*path}", "app3/index.html");
-app.MapFallbackToFile("/app4/{*path}", "app4/index.html");
-```
-
 ---
 
 ## 2. ASP.NET Core MVC: Simplified Virtual Isolation (No Areas)
