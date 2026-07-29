@@ -32,19 +32,19 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.11.0" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.16.16" />
     <PackageReference Include="System.Data.OleDb" Version="10.0.10" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.10" />
     <PackageReference Include="Piranha" Version="12.2.0" />
-    <PackageReference Include="Piranha.AspNetCore" Version="12.0.0" />
-    <PackageReference Include="Piranha.AttributeBuilder" Version="12.0.0" />
-    <PackageReference Include="Piranha.Manager" Version="12.0.0" />
-    <PackageReference Include="Piranha.Manager.LocalAuth" Version="12.0.0" />
-    <PackageReference Include="Piranha.Manager.TinyMCE" Version="12.0.0" />
-    <PackageReference Include="Piranha.Data.EF.SQLite" Version="12.0.0" />
-    <PackageReference Include="Piranha.ImageSharp" Version="12.0.0" />
-    <PackageReference Include="Piranha.Local.FileStorage" Version="12.0.0" />
+    <PackageReference Include="Piranha.AspNetCore" Version="12.2.0" />
+    <PackageReference Include="Piranha.AttributeBuilder" Version="12.2.0" />
+    <PackageReference Include="Piranha.Manager" Version="12.2.0" />
+    <PackageReference Include="Piranha.Manager.LocalAuth" Version="12.2.0" />
+    <PackageReference Include="Piranha.Manager.TinyMCE" Version="12.2.0" />
+    <PackageReference Include="Piranha.Data.EF.SQLite" Version="12.2.0" />
+    <PackageReference Include="Piranha.ImageSharp" Version="12.2.0" />
+    <PackageReference Include="Piranha.Local.FileStorage" Version="12.2.0" />
 
     <!-- Blazor Server + MudBlazor -->
     <PackageReference Include="Blazor-State" Version="10.0.0" />
