@@ -38,18 +38,6 @@ wwwroot/
     ├── index.html
     └── src/router.js
 ```
-
-### Dynamic Vue Router Configuration (`wwwroot/app/src/router.js`)
-```javascript
-// Automatically determines base path based on URL (e.g. "/app/", "/app3/", "/app4/")
-const router = new VueRouter({
-  base: window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1),
-  routes,
-});
-
-export default router;
-```
-
 ### ASP.NET Core Server Configuration (`Program.cs`)
 ```csharp
 // Serve index.html for each copy-pasted virtual SPA fallback route
