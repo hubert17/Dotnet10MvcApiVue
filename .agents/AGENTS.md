@@ -23,14 +23,7 @@ These instructions govern all future modifications, tests, and task executions p
     *   **Standard Run:** `.\Dotnet10MvcApi\run-debug.bat`
     *   **Agent Run (Low Verbosity):** `.\Dotnet10MvcApi\run-debug.bat --agent` (or `/agent`), which automatically sets `ASPNETCORE_ENVIRONMENT=Development` and executes `dotnet run --project . --arch x64 --verbosity quiet`.
 *   **App Execution & Clickable URLs Rule:**
-    *   **Clickable Endpoint Links:** Whenever the application has been debugged and launched successfully, always include clickable Markdown links to the relevant app URLs in your response:
-        *   Landing Page: [https://localhost:7031/](https://localhost:7031/)
-        *   Vue 2 SPA (`/app`): [https://localhost:7031/app](https://localhost:7031/app)
-        *   Razor MVC (`/home`): [https://localhost:7031/home](https://localhost:7031/home)
-        *   Blazor Server (`/blazor`): [https://localhost:7031/blazor](https://localhost:7031/blazor)
-        *   Piranha CMS Public (`/blogs`): [https://localhost:7031/blogs](https://localhost:7031/blogs)
-        *   Piranha CMS Manager (`/manager`): [https://localhost:7031/manager](https://localhost:7031/manager)
-        *   Scalar OpenAPI Specs: [https://localhost:7031/scalar/v1](https://localhost:7031/scalar/v1)
+    *   **Contextual Clickable Links:** Whenever the application has been debugged and launched successfully, include clickable Markdown links **strictly relevant to the specific feature, page, or context currently being worked on or debugged** (e.g. [https://localhost:7031/Account/ChangePassword](https://localhost:7031/Account/ChangePassword), [https://localhost:7031/manager](https://localhost:7031/manager), or [https://localhost:7031/scalar/v1](https://localhost:7031/scalar/v1)), rather than listing all application URLs indiscriminately.
     *   **No Unsolicited Launching:** If you are not actively debugging a runtime issue, do **not** launch the application right away. Instead, offer to run/launch the app for the user and ask for their confirmation first.
 
 ---
