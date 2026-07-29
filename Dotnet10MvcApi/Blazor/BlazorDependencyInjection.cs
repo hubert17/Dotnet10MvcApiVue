@@ -1,6 +1,7 @@
 using Blazored.LocalStorage;
 using BlazorState;
 using Dotnet10MvcApi.Services.Blazor;
+using Dotnet10MvcApi.Services.Notifications;
 using Dotnet10MvcApi.Blazor.States;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;

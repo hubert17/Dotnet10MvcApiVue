@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
-namespace Dotnet10MvcApi.Services.Blazor
+namespace Dotnet10MvcApi.Services.Notifications
 {
     /// <summary>
-    /// SignalR hub — shared by MVC, Blazor Server, and API paradigms.
+    /// SignalR hub — shared application real-time notification endpoint.
+    /// Used by MVC, Blazor Server, Vue SPA, and REST API paradigms.
     /// Mapped at /notificationhub in Program.cs.
     /// </summary>
     public class NotificationHub : Hub

@@ -363,7 +363,7 @@ app.MapGet("/app", async context =>
 app.MapRazorComponents<Dotnet10MvcApi.Blazor.App>()
     .AddInteractiveServerRenderMode();
 
-app.MapHub<Dotnet10MvcApi.Services.Blazor.NotificationHub>("/notificationhub");
+app.MapHub<Dotnet10MvcApi.Services.Notifications.NotificationHub>("/notificationhub");
 
 app.MapControllerRoute(
     name: "default",

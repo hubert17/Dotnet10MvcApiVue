@@ -1,5 +1,6 @@
 using Dotnet10MvcApi.Models.Entities;
 using Dotnet10MvcApi.Services.Blazor;
+using Dotnet10MvcApi.Services.Notifications;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.SignalR.Client;

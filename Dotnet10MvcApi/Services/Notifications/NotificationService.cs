@@ -3,10 +3,10 @@ using Dotnet10MvcApi.Models.Entities;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dotnet10MvcApi.Services.Blazor
+namespace Dotnet10MvcApi.Services.Notifications
 {
     /// <summary>
-    /// Notification service — uses ApplicationDbContext + shared SignalR NotificationHub.
+    /// Application notification service — uses ApplicationDbContext + shared SignalR NotificationHub.
     /// </summary>
     public class NotificationService
     {
