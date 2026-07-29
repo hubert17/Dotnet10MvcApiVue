@@ -5,7 +5,21 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!-- Lock compilation target to x64 for MS Access OLE DB driver compatibility -->
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
+
+  <!-- Exclude Vite/Node development files and documentation under wwwroot from Publish Output -->
+  <ItemGroup>
+    <Content Update="wwwroot\**\node_modules\**" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\**\package.json" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\**\package-lock.json" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\**\yarn.lock" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\**\pnpm-lock.yaml" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\**\vite.config.*" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\**\.vite\**" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\**\README.md" CopyToPublishDirectory="Never" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="33.1.0" />
