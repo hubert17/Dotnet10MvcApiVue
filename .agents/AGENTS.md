@@ -120,6 +120,13 @@ These instructions govern all future modifications, tests, and task executions p
         2. **Mindful Architectural Discussion:** Discuss the proposed paradigm recommendation mindfully with the System Architect before proceeding with code implementation.
         3. **Autonomous AI Decision-Making:** If the Architect is unsure, defers the choice, or has limited knowledge of the project's paradigms, the AI agent must make an informed, appropriate architectural decision autonomously and explain the rationale clearly before building.
 
+*   **Virtual / Sub-Application Isolation Rule (Optional Pattern):**
+    *   When intentionally scaling or adding multiple distinct sub-applications (especially within the same paradigm), follow the folder organization and layout isolation patterns detailed in [.agents/VIRTUAL_APPS_GUIDE.md](file:///.agents/VIRTUAL_APPS_GUIDE.md):
+        - **Vue 2 SPA:** Duplicate SPA folder under `wwwroot/app2`, `wwwroot/app3` (leveraging dynamic Vue Router base detection in `router.js`).
+        - **Razor MVC:** Named controllers (`App3HomeController`) + view folders (`Views/App3Home/`) + folder `_ViewStart.cshtml` for `_LayoutApp3.cshtml` (avoiding ASP.NET Core Areas).
+        - **Blazor Server:** `Pages/App3/` folder convention matching `@page "/app3/*"` routes + `_Imports.razor` for `App3Layout.razor`.
+    *   **Note:** This virtual isolation pattern is **optional** and only relevant when introducing multiple sub-applications. Routine feature development must default to existing core paths. Always respect reserved host routes (`/`, `/app`, `/blazor`, `/api`, `/blogs`, `/articles`, `/manager`, `/scalar`).
+
 ---
 
 ## 🤖 Agentic AI Debugging Tooling (Vue 2 SPA Vite Debugger)
