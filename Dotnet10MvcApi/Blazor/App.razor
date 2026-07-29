@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="@BlazorOptions.BaseHref" />
+
+    <title>Dotnet10MvcApi - Blazor Server</title>
+    <meta name="description" content="Blazor Server app — part of the Dotnet10MvcApi unified monolith." />
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="@Abs(Assets["_content/MudBlazor/MudBlazor.min.css"])" rel="stylesheet" />
+    <link href="@Abs(Assets["_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.css"])" rel="stylesheet" />
+    <link href="/css/blazor-app.css" rel="stylesheet" />
+
+    <HeadOutlet @rendermode="RenderModeForPage" />
+</head>
+
+<body>
+    <Routes @rendermode="RenderModeForPage" />
+
+    <script src="/_framework/blazor.web.js"></script>
+    <script src="@Abs(Assets["_content/MudBlazor/MudBlazor.min.js"])"></script>
+    <script src="@Abs(Assets["_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.js"])"></script>
+
+    <script src="/js/geo.js"></script>
+    <script src="/js/scroll.js"></script>
+</body>
+
+</html>
+
+@code {
+    [Inject] private BlazorOptions BlazorOptions { get; set; } = default!;
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private string Abs(string path) => path.StartsWith('/') ? path : "/" + path;
+
+    private IComponentRenderMode? RenderModeForPage =>
+        IsNonInteractive(HttpContext?.Request.Path ?? default)
+            ? null : new InteractiveServerRenderMode(prerender: false);
+
+    private bool IsNonInteractive(PathString path)
+    {
+        if (!path.HasValue) return false;
+        var p = path.Value ?? string.Empty;
+        var prefix = "/" + (BlazorOptions?.RoutePrefix ?? "blazor").Trim('/');
+        return p.Equals("/login", StringComparison.OrdinalIgnoreCase) ||
+               p.Equals("/logout", StringComparison.OrdinalIgnoreCase) ||
+               p.StartsWith("/login/", StringComparison.OrdinalIgnoreCase) ||
+               p.StartsWith("/logout/", StringComparison.OrdinalIgnoreCase) ||
+               p.StartsWith($"{prefix}/login", StringComparison.OrdinalIgnoreCase) ||
+               p.StartsWith($"{prefix}/logout", StringComparison.OrdinalIgnoreCase);
+    }
+}

@@ -1,0 +1,22 @@
+/*
+	Blazor application custom CSS
+*/
+
+.btn-primary {
+    text-transform: uppercase;
+    --bs-btn-bg: var(--mud-palette-primary) !important;
+    --bs-btn-hover-bg: var(--mud-palette-primary-darken) !important;
+}
+
+.nav-pills {
+    --bs-nav-pills-link-active-bg: var(--mud-palette-primary) !important;
+}
+
+.nav {
+    --bs-nav-link-color: var(--mud-palette-primary) !important;
+    --bs-nav-link-hover-color: var(--mud-palette-primary-darken) !important;
+}
+
+.mud-layout {
+    overflow-x: clip;
+}

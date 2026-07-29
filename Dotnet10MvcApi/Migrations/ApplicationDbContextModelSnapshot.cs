@@ -21,7 +21,40 @@ namespace Dotnet10MvcApi.Migrations
                 .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            modelBuilder.Entity("Dotnet10MvcApi.Models.Product", b =>
+            modelBuilder.Entity("Dotnet10MvcApi.Models.Entities.BlazorNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Jet:ValueGenerationStrategy", JetValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Content")
+                        .HasColumnType("longchar");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("NavigateToUrl")
+                        .HasColumnType("longchar");
+
+                    b.Property<int>("NotificationType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("BlazorNotifications");
+                });
+
+            modelBuilder.Entity("Dotnet10MvcApi.Models.Entities.Product", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -53,7 +86,7 @@ namespace Dotnet10MvcApi.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("Dotnet10MvcApi.Models.RefreshToken", b =>
+            modelBuilder.Entity("Dotnet10MvcApi.Models.Entities.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -80,7 +113,7 @@ namespace Dotnet10MvcApi.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("Dotnet10MvcApi.Models.Song", b =>
+            modelBuilder.Entity("Dotnet10MvcApi.Models.Entities.Song", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -114,7 +147,7 @@ namespace Dotnet10MvcApi.Migrations
                     b.ToTable("Songs");
                 });
 
-            modelBuilder.Entity("Dotnet10MvcApi.Models.UserAccount", b =>
+            modelBuilder.Entity("Dotnet10MvcApi.Models.Entities.UserAccount", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -152,6 +185,16 @@ namespace Dotnet10MvcApi.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Dotnet10MvcApi.Models.Entities.BlazorNotification", b =>
+                {
+                    b.HasOne("Dotnet10MvcApi.Models.Entities.UserAccount", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

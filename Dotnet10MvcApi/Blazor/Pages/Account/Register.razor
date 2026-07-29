@@ -1,0 +1,71 @@
+@page "/register"
+@layout Layout.LoginLayout
+@attribute [AllowAnonymous]
+
+@inject BlazorUserService UserService
+@inject NavigationManager NavManager
+@inject ISnackbar SnackBar
+
+<PageTitle>Dotnet10 Blazor — Register</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Register</MudText>
+
+<MudText>Already have an account? <MudLink OnClick='() => NavManager.NavigateTo("login", true)'>Sign In</MudLink></MudText>
+
+<MudTextField T="string" @bind-Value="@NewAccount.Username" name="@nameof(NewAccount.Username)" Label="Username / E-mail" Variant="Variant.Outlined" Class="my-6"></MudTextField>
+<MudTextField T="string" InputType="InputType.Password" @bind-Value="@NewAccount.Password" name="@nameof(NewAccount.Password)" Label="Password" Variant="Variant.Outlined" Class="my-6" />
+<MudTextField T="string" InputType="InputType.Password" @bind-Value="@NewAccount.RetypePassword" name="@nameof(NewAccount.RetypePassword)" Label="Retype Password" Variant="Variant.Outlined" />
+
+<div Class="d-flex justify-space-between align-center">
+    <MudCheckBox @bind-Value="@agreeTerms" T="bool" Color="Color.Primary" Class="ml-n3 my-1">I agree to the <MudLink Href="#">Terms and Conditions</MudLink></MudCheckBox>
+    <MudSpacer />
+</div>
+
+<MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" ButtonType="ButtonType.Submit" OnClick="SignupClicked" Disabled="!agreeTerms || isSubmitting">Sign Up</MudButton>
+
+@code {
+    public SignupDTO NewAccount { get; set; } = new SignupDTO();
+
+    bool isSubmitting = false;
+    bool agreeTerms = false;
+
+    void SignupClicked()
+    {
+        isSubmitting = true;
+
+        if (NewAccount.Password == NewAccount.RetypePassword)
+        {
+            var newUserId = UserService.Create(NewAccount.Username, NewAccount.Password, "user");
+            if (newUserId != null)
+            {
+                SnackBar.Add("Account successfully created.", Severity.Info);
+                NavManager.NavigateTo("login", true);
+            }
+            else
+            {
+                isSubmitting = false;
+                clearSnackBars();
+                SnackBar.Add("Failed to create your account. Please try again with a different username.", Severity.Error);
+            }
+        }
+        else
+        {
+            isSubmitting = false;
+            clearSnackBars();
+            SnackBar.Add("Password does not match.", Severity.Warning);
+        }
+    }
+
+    void clearSnackBars()
+    {
+        SnackBar.Clear();
+        SnackBar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+    }
+
+    public class SignupDTO
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string RetypePassword { get; set; } = string.Empty;
+    }
+}

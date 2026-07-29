@@ -1,0 +1,21 @@
+@page "/logout"
+@layout Layout.NullLayout
+@attribute [AllowAnonymous]
+
+@inject ServerCookieAuthService Auth
+@inject HostedAuthStateProvider AuthProvider
+@inject NavigationManager Nav
+
+<PageTitle>Signing out...</PageTitle>
+
+<form method="post" action="/Account/Logout"><noscript><button type="submit">Sign out</button></noscript></form>
+<script>window.onload = () => document.forms[0]?.submit();</script>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.SignOutAsync();
+        AuthProvider.Notify();
+        Nav.NavigateTo("login", true);
+    }
+}

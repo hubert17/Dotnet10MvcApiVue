@@ -1,0 +1,501 @@
+@page "/"
+@inject NavigationManager Navigation
+@inject Dotnet10MvcApi.Blazor.BlazorOptions BlazorOptions
+
+<PageTitle>Home - Blazor Server Monolith</PageTitle>
+
+<style>
+    .hero-banner {
+        background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 3rem 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(21, 101, 192, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-banner::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+        pointer-events: none;
+    }
+
+    .glass-badge {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: white;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .feature-card {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        border-radius: 8px;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--mud-elevation-4);
+    }
+
+    .doc-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+        border: 1px solid var(--mud-palette-lines-inputs);
+    }
+
+    .doc-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--mud-palette-primary);
+    }
+
+    .code-box {
+        background-color: var(--mud-palette-background-grey);
+        border-radius: 6px;
+        padding: 12px;
+        font-family: 'Consolas', 'Courier New', Courier, monospace;
+        font-size: 0.85rem;
+        border: 1px solid var(--mud-palette-lines-inputs);
+        overflow-x: auto;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4 pb-12">
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+        <div class="d-flex flex-column gap-3">
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                <span class="glass-badge">
+                    <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" /> .NET 10.0 LTS
+                </span>
+                <span class="glass-badge">
+                    <MudIcon Icon="@Icons.Material.Filled.Bolt" Size="Size.Small" /> Blazor Server
+                </span>
+                <span class="glass-badge">
+                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" /> Shared Cookie Auth
+                </span>
+                <span class="glass-badge">
+                    <MudIcon Icon="@Icons.Material.Filled.Layers" Size="Size.Small" /> Unified Monolith
+                </span>
+            </div>
+            
+            <MudText Typo="Typo.h3" Class="font-weight-bold" Style="font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.2;">
+                Blazor Server in Unified .NET 10 Monolith
+            </MudText>
+            
+            <MudText Typo="Typo.subtitle1" Style="opacity: 0.9; max-width: 750px; font-weight: 300;">
+                Experience interactive server-rendered UI powered by MudBlazor, seamless shared cookie authentication with ASP.NET Core MVC, and integrated Piranha CMS v12 content management out of a single ASP.NET Core process.
+            </MudText>
+        </div>
+    </div>
+
+    <!-- Main Content & Feature Explorer -->
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <MudCard Outlined="true" Class="pa-2">
+                <MudCardContent>
+                    <div class="d-flex align-center gap-2 mb-4">
+                        <MudIcon Icon="@Icons.Material.Filled.Explore" Color="Color.Primary" Size="Size.Medium" />
+                        <MudText Typo="Typo.h5" Class="font-weight-bold">Architecture Explorer</MudText>
+                    </div>
+                    
+                    <MudTabs Elevation="0" Rounded="true" Centered="false" Color="Color.Primary" ActivePanelIndexChanged="OnTabChanged">
+                        <!-- Tab 1: Unified Monolith Architecture -->
+                        <MudTabPanel Text="Monolith Stack" Icon="@Icons.Material.Outlined.Layers">
+                            <div class="pt-4">
+                                <MudText Typo="Typo.subtitle1" Class="font-weight-bold mb-2">Multi-Paradigm Single-Process Hosting</MudText>
+                                <MudText Typo="Typo.body2" Class="mb-4">
+                                    This application runs as a unified ASP.NET Core process hosting five distinct web paradigms without requiring external Node build servers:
+                                </MudText>
+                                
+                                <MudGrid Class="mb-2">
+                                    <MudItem xs="12" sm="6">
+                                        <div class="d-flex align-start gap-2 mb-3">
+                                            <MudIcon Icon="@Icons.Material.Filled.Computer" Color="Color.Primary" Size="Size.Small" />
+                                            <div>
+                                                <MudText Typo="Typo.body2" Class="font-weight-bold">Blazor Server (/blazor)</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">Interactive server-rendered MudBlazor components with SignalR WebSockets.</MudText>
+                                            </div>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="6">
+                                        <div class="d-flex align-start gap-2 mb-3">
+                                            <MudIcon Icon="@Icons.Material.Filled.Web" Color="Color.Primary" Size="Size.Small" />
+                                            <div>
+                                                <MudText Typo="Typo.body2" Class="font-weight-bold">Razor MVC (/home)</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">Server-side rendered MVC views with lightweight petite-vue reactivity.</MudText>
+                                            </div>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="6">
+                                        <div class="d-flex align-start gap-2 mb-3">
+                                            <MudIcon Icon="@Icons.Material.Filled.Apps" Color="Color.Primary" Size="Size.Small" />
+                                            <div>
+                                                <MudText Typo="Typo.body2" Class="font-weight-bold">Vue 2.x SPA (/app)</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">Native browser ES module single page application without npm build steps.</MudText>
+                                            </div>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="6">
+                                        <div class="d-flex align-start gap-2 mb-3">
+                                            <MudIcon Icon="@Icons.Material.Filled.Article" Color="Color.Primary" Size="Size.Small" />
+                                            <div>
+                                                <MudText Typo="Typo.body2" Class="font-weight-bold">Piranha CMS (/blogs, /manager)</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">Headless and SSR content management engine with custom hero block types.</MudText>
+                                            </div>
+                                        </div>
+                                    </MudItem>
+                                </MudGrid>
+                            </div>
+                        </MudTabPanel>
+
+                        <!-- Tab 2: Shared Cookie & JWT Authentication -->
+                        <MudTabPanel Text="Shared Auth" Icon="@Icons.Material.Outlined.Security">
+                            <div class="pt-4">
+                                <MudText Typo="Typo.subtitle1" Class="font-weight-bold mb-2">Unified Authentication Scheme</MudText>
+                                <MudText Typo="Typo.body2" Class="mb-4">
+                                    The application shares a unified cookie authentication scheme (`.AspNetCore.Cookies`) configured at root path (`Path=/`). Single sign-on works seamlessly across MVC, Blazor Server, and Piranha Manager.
+                                </MudText>
+                                
+                                <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Class="mb-4">
+                                    Logging in from either Blazor (<code>/blazor/login</code>) or MVC (<code>/login</code>) immediately authenticates the user across the entire monolith application.
+                                </MudAlert>
+
+                                <MudText Typo="Typo.body2" Class="font-weight-bold mb-1">Configured Cookie & Auth Schemes:</MudText>
+                                <pre class="code-box"><code>builder.Services.AddAuthentication(options => {
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(options => {
+    options.Cookie.Name = ".AspNetCore.Cookies";
+    options.Cookie.Path = "/";
+});</code></pre>
+                            </div>
+                        </MudTabPanel>
+
+                        <!-- Tab 3: MudBlazor Material UI -->
+                        <MudTabPanel Text="MudBlazor UI" Icon="@Icons.Material.Outlined.Widgets">
+                            <div class="pt-4">
+                                <MudText Typo="Typo.subtitle1" Class="font-weight-bold mb-2">Pure C# Material Design Components</MudText>
+                                <MudText Typo="Typo.body2" Class="mb-3">
+                                    Blazor Server pages leverage MudBlazor, providing a rich collection of interactive controls without relying on heavy external JavaScript libraries.
+                                </MudText>
+                                
+                                <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+                                    <li class="mb-2">
+                                        <b>Static SSR & Interactive Modes</b>: Login and Logout routes use static server-side rendering for reliable HTTP cookie issuance, while remaining pages leverage interactive Server WebSockets.
+                                    </li>
+                                    <li class="mb-2">
+                                        <b>Dark & Light Theme Switching</b>: Built-in theme state management powered by BlazorState and MudThemeProvider.
+                                    </li>
+                                    <li class="mb-2">
+                                        <b>Extensions & Loading Controls</b>: Enhanced with CodeBeam MudBlazor Extensions (`MudLoadingButton`, `MudLoading`).
+                                    </li>
+                                </ul>
+                            </div>
+                        </MudTabPanel>
+
+                        <!-- Tab 4: Database & EF Core Jet -->
+                        <MudTabPanel Text="Database & EF Core" Icon="@Icons.Material.Outlined.Storage">
+                            <div class="pt-4">
+                                <MudText Typo="Typo.subtitle1" Class="font-weight-bold mb-2">Relational Data & Seeding</MudText>
+                                <MudText Typo="Typo.body2" Class="mb-4">
+                                    Application data uses Entity Framework Core with the Jet provider targeting MS Access (`MyAccessDb.mdb`) running in x64 emulation, alongside SQLite for Piranha CMS.
+                                </MudText>
+
+                                <div class="d-flex flex-column gap-3 mb-4">
+                                    <div class="d-flex align-start gap-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                                        <div>
+                                            <MudText Typo="Typo.body2" Class="font-weight-bold">Automatic [#Dual] Table Seeding</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Auto-creates the helper table required by EF Core Jet provider for scalar and LINQ evaluations.</MudText>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-start gap-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.FlashOn" Color="Color.Success" Size="Size.Small" />
+                                        <div>
+                                            <MudText Typo="Typo.body2" Class="font-weight-bold">Bulk Ingest Data Seeding</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Uses parameterized ADO.NET transactions to seed high-volume datasets like the Billboard song database.</MudText>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </MudTabPanel>
+                    </MudTabs>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <!-- Sandbox Simulation Widget -->
+            <MudCard Outlined="true" Style="height: 100%; display: flex; flex-direction: column;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Filled.DashboardCustomize" Color="Color.Secondary" />
+                            <MudText Typo="Typo.h6" Class="font-weight-bold">Compiler Sandbox</MudText>
+                        </div>
+                        <MudText Typo="Typo.caption">Interactive JIT & GC optimization visualizer</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Style="flex-grow: 1;" Class="d-flex flex-column justify-space-between gap-4">
+                    <div>
+                        <MudSelect T="string" Label="Select Benchmark Workload" @bind-Value="_selectedBenchmark" Class="mb-4" Dense="true" Margin="Margin.Dense">
+                            <MudSelectItem Value="@("Loop Unrolling")" />
+                            <MudSelectItem Value="@("Interface Devirtualization")" />
+                            <MudSelectItem Value="@("Memory Allocations (GC)")" />
+                        </MudSelect>
+
+                        @if (_isSimulating)
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-6 gap-2">
+                                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Analyzing JIT optimizations...</MudText>
+                            </div>
+                        }
+                        else if (_simulationFinished)
+                        {
+                            <div class="d-flex flex-column gap-3">
+                                <div>
+                                    <div class="d-flex justify-space-between align-center">
+                                        <MudText Typo="Typo.caption" Class="font-weight-bold">.NET 8 (LTS)</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Error">@_net8Time</MudText>
+                                    </div>
+                                    <MudProgressLinear Color="Color.Error" Value="@_net8Percent" Class="my-1" Size="Size.Medium" />
+                                </div>
+
+                                <div>
+                                    <div class="d-flex justify-space-between align-center">
+                                        <MudText Typo="Typo.caption" Class="font-weight-bold">.NET 9</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Warning">@_net9Time</MudText>
+                                    </div>
+                                    <MudProgressLinear Color="Color.Warning" Value="@_net9Percent" Class="my-1" Size="Size.Medium" />
+                                </div>
+
+                                <div>
+                                    <div class="d-flex justify-space-between align-center">
+                                        <MudText Typo="Typo.caption" Class="font-weight-bold">.NET 10 (LTS)</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Success">@_net10Time</MudText>
+                                    </div>
+                                    <MudProgressLinear Color="Color.Success" Value="@_net10Percent" Class="my-1" Size="Size.Medium" />
+                                </div>
+
+                                <MudText Typo="Typo.caption" Class="mt-2 text-justify" Style="display: block; font-style: italic;">
+                                    @_benchmarkExplanation
+                                </MudText>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-8 text-center">
+                                <MudIcon Icon="@Icons.Material.Filled.PlayCircleFilled" Size="Size.Large" Color="Color.Primary" Style="opacity: 0.5; font-size: 3rem;" />
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">Select a workload and click execute to simulate JIT runtime optimizations.</MudText>
+                            </div>
+                        }
+                    </div>
+
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RunBenchmarkSimulation" Disabled="@_isSimulating" FullWidth="true">
+                        @(_simulationFinished ? "Re-Run Simulation" : "Execute Workload")
+                    </MudButton>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudDivider Class="my-8" />
+
+    <!-- MudBlazor Spotlight Section -->
+    <div class="d-flex align-center gap-2 mb-4">
+        <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Primary" Size="Size.Medium" />
+        <MudText Typo="Typo.h5" Class="font-weight-bold">MudBlazor Component Library</MudText>
+    </div>
+
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Class="feature-card" Outlined="true">
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Primary" Size="Size.Medium" Class="mb-2" />
+                    <MudText Typo="Typo.body1" Class="font-weight-bold">Fast & Lightweight</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                        Built entirely in C# with minimal external JavaScript references for quick load times and high responsiveness.
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Class="feature-card" Outlined="true">
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.Palette" Color="Color.Secondary" Size="Size.Medium" Class="mb-2" />
+                    <MudText Typo="Typo.body1" Class="font-weight-bold">Material Design</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                        Adheres strictly to Material Design principles, supporting fluid light/dark transitions and dynamic layout themes.
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Class="feature-card" Outlined="true">
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.Widgets" Color="Color.Info" Size="Size.Medium" Class="mb-2" />
+                    <MudText Typo="Typo.body1" Class="font-weight-bold">Huge Component Grid</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                        Offers a comprehensive component catalogue, including complex charts, responsive grids, dialogs, and popovers.
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Class="feature-card" Outlined="true">
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.Code" Color="Color.Success" Size="Size.Medium" Class="mb-2" />
+                    <MudText Typo="Typo.body1" Class="font-weight-bold">SSR & Static Ready</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                        Tailored for modern rendering strategies like static server-side rendering, streaming rendering, and full interactivity.
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudDivider Class="my-8" />
+
+    <!-- Help & Learning Center -->
+    <MudText Typo="Typo.h5" Class="font-weight-bold mb-4">Official Resources & Documentation</MudText>
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="4">
+            <div class="doc-card pa-4 rounded">
+                <div>
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Book" Color="Color.Primary" />
+                        <MudText Typo="Typo.body1" Class="font-weight-bold">Blazor Learn Center</MudText>
+                    </div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Explore the official documentation on Microsoft Learn covering hosting models, state, and rendering modes.
+                    </MudText>
+                </div>
+                <MudButton Href="https://learn.microsoft.com/en-us/aspnet/core/blazor/?view=aspnetcore-10.0" Target="_blank" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="mt-4 pa-0 align-self-start">
+                    Read Blazor Docs
+                </MudButton>
+            </div>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <div class="doc-card pa-4 rounded">
+                <div>
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Campaign" Color="Color.Secondary" />
+                        <MudText Typo="Typo.body1" Class="font-weight-bold">ASP.NET Core 10.0</MudText>
+                    </div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Read the release logs detailing what's new in the web engine, security updates, and performance optimizations.
+                    </MudText>
+                </div>
+                <MudButton Href="https://learn.microsoft.com/en-us/aspnet/core/release-notes/aspnetcore-10.0" Target="_blank" Variant="Variant.Text" Color="Color.Secondary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="mt-4 pa-0 align-self-start">
+                    Read Release Notes
+                </MudButton>
+            </div>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <div class="doc-card pa-4 rounded">
+                <div>
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.ArtTrack" Color="Color.Info" />
+                        <MudText Typo="Typo.body2" Class="font-weight-bold">MudBlazor Component Hub</MudText>
+                    </div>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Browse interactive code playground samples and API descriptions for the complete MudBlazor Material component list.
+                    </MudText>
+                </div>
+                <MudButton Href="https://mudblazor.com/" Target="_blank" Variant="Variant.Text" Color="Color.Info" EndIcon="@Icons.Material.Filled.ArrowForward" Class="mt-4 pa-0 align-self-start">
+                    Explore MudBlazor
+                </MudButton>
+            </div>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string _selectedBenchmark = "Loop Unrolling";
+    private bool _isSimulating = false;
+    private bool _simulationFinished = false;
+
+    private string _net8Time = "";
+    private string _net9Time = "";
+    private string _net10Time = "";
+    
+    private int _net8Percent = 100;
+    private int _net9Percent = 100;
+    private int _net10Percent = 100;
+
+    private string _benchmarkExplanation = "";
+
+    private void OnTabChanged(int index)
+    {
+    }
+
+    private async Task RunBenchmarkSimulation()
+    {
+        _isSimulating = true;
+        _simulationFinished = false;
+        StateHasChanged();
+
+        await Task.Delay(1000);
+
+        if (_selectedBenchmark == "Loop Unrolling")
+        {
+            _net8Time = "124ms";
+            _net9Time = "82ms";
+            _net10Time = "31ms (4.0x faster)";
+
+            _net8Percent = 100;
+            _net9Percent = 66;
+            _net10Percent = 25;
+
+            _benchmarkExplanation = "In .NET 10, the JIT compiler implements advanced loop unrolling strategies and vectorization heuristics. It expands short, fixed loops into linear instructions to eliminate branch-prediction overhead.";
+        }
+        else if (_selectedBenchmark == "Interface Devirtualization")
+        {
+            _net8Time = "215ms";
+            _net9Time = "143ms";
+            _net10Time = "54ms (3.9x faster)";
+
+            _net8Percent = 100;
+            _net9Percent = 66;
+            _net10Percent = 25;
+
+            _benchmarkExplanation = "Dynamic devirtualization in the .NET 10 JIT automatically resolves interface method calls to direct method invocations. This enables the compiler to inline methods that were previously blocked by polymorphism.";
+        }
+        else
+        {
+            _net8Time = "4.2 KB (18 allocs)";
+            _net9Time = "1.8 KB (8 allocs)";
+            _net10Time = "0 B (0 allocations!)";
+
+            _net8Percent = 100;
+            _net9Percent = 43;
+            _net10Percent = 0;
+
+            _benchmarkExplanation = "Memory allocation tracking in .NET 10 benefits from aggressive stack allocation analysis. Small buffers and temporary arrays are allocated directly to stack memory instead of heap memory, generating zero GC pressure.";
+        }
+
+        _isSimulating = false;
+        _simulationFinished = true;
+        StateHasChanged();
+    }
+}

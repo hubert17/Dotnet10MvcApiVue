@@ -22,42 +22,16 @@ namespace Dotnet10MvcApi.Controllers.Api
         private readonly ApplicationDbContext _db;
         private readonly TokenManager _tokenManager;
         private readonly DevUserService _devUserService;
+        private readonly UserAccountService _userAccountService;
 
-        public ApiAccountController(ApplicationDbContext db, TokenManager tokenManager, DevUserService devUserService)
+        public ApiAccountController(ApplicationDbContext db, TokenManager tokenManager, DevUserService devUserService, UserAccountService userAccountService)
         {
             _db = db;
             _tokenManager = tokenManager;
             _devUserService = devUserService;
+            _userAccountService = userAccountService;
         }
 
-        // Helper: Create admin account if it does not exist in database
-        private async Task EnsureAdminCreatedAsync()
-        {
-            try
-            {
-                var hasAdmin = await _db.Users.AnyAsync(x => x.Roles == UserAccount.DEFAULT_ADMIN_ROLENAME);
-                if (!hasAdmin)
-                {
-                    UserAccount.CreatePasswordHash(UserAccount.DEFAULT_ADMIN_LOGIN, out byte[] passwordHash, out byte[] passwordSalt);
-                    var admin = new UserAccount
-                    {
-                        Id = Guid.NewGuid(),
-                        UserName = UserAccount.DEFAULT_ADMIN_LOGIN,
-                        PasswordHash = passwordHash,
-                        PasswordSalt = passwordSalt,
-                        CreatedOn = DateTime.Now,
-                        IsActive = true,
-                        Roles = UserAccount.DEFAULT_ADMIN_ROLENAME
-                    };
-                    _db.Users.Add(admin);
-                    await _db.SaveChangesAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"EnsureAdminCreatedAsync bypassed/failed: {ex.Message}");
-            }
-        }
 
         // POST /TOKEN
         [HttpPost]
@@ -76,75 +50,45 @@ namespace Dotnet10MvcApi.Controllers.Api
                 return BadRequest("Username and password are required.");
             }
 
-            await EnsureAdminCreatedAsync();
+            await _userAccountService.EnsureAdminExistsAsync();
 
             var cleanUsername = inputUsername.Trim().ToLower();
 
-            // 1. Primary: Database Authentication
-            try
+            // 1. Primary: Database Authentication via shared UserAccountService
+            var user = await _userAccountService.AuthenticateAsync(cleanUsername, inputPassword);
+            if (user != null)
             {
-                // Match original special admin username override logic
-                var dbUsername = cleanUsername;
-                if (inputUsername.Contains("@"))
+                var userRoles = user.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                var token = _tokenManager.CreateToken(user.UserName, userRoles);
+                var refreshToken = GenerateRefreshTokenString();
+
+                // Save Refresh Token
+                var existingToken = await _db.RefreshTokens.FirstOrDefaultAsync(r => r.UserName == user.UserName);
+                if (existingToken != null)
                 {
-                    var prefix = inputUsername.Split('@')[0];
-                    if (prefix.Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase))
-                    {
-                        dbUsername = UserAccount.DEFAULT_ADMIN_LOGIN;
-                    }
+                    existingToken.Token = refreshToken;
+                    existingToken.Created = DateTime.UtcNow;
+                    _db.Entry(existingToken).State = EntityState.Modified;
                 }
-
-                var user = await _db.Users.FirstOrDefaultAsync(u => u.UserName == dbUsername);
-
-                if (user != null && user.IsActive && UserAccount.VerifyPasswordHash(inputPassword, user.PasswordSalt, user.PasswordHash))
+                else
                 {
-                    // If it is admin and they are logging in with an email format username, request password change
-                    if (dbUsername.Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase) && 
-                        (username?.Contains("@") == true || formUsername?.Contains("@") == true))
+                    _db.RefreshTokens.Add(new RefreshToken
                     {
-                        return BadRequest("Please change your password");
-                    }
-
-                    user.LastLogin = DateTime.Now;
-                    _db.Entry(user).State = EntityState.Modified;
-                    await _db.SaveChangesAsync();
-
-                    var userRoles = user.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                    var token = _tokenManager.CreateToken(user.UserName, userRoles);
-                    var refreshToken = GenerateRefreshTokenString();
-
-                    // Save Refresh Token
-                    var existingToken = await _db.RefreshTokens.FirstOrDefaultAsync(r => r.UserName == user.UserName);
-                    if (existingToken != null)
-                    {
-                        existingToken.Token = refreshToken;
-                        existingToken.Created = DateTime.UtcNow;
-                        _db.Entry(existingToken).State = EntityState.Modified;
-                    }
-                    else
-                    {
-                        _db.RefreshTokens.Add(new RefreshToken
-                        {
-                            UserName = user.UserName,
-                            Token = refreshToken,
-                            Created = DateTime.UtcNow
-                        });
-                    }
-                    await _db.SaveChangesAsync();
-
-                    return Ok(new
-                    {
-                        userId = user.UserName,
-                        userName = user.UserName,
-                        userRoles = userRoles,
-                        token = token,
-                        refreshToken = refreshToken
+                        UserName = user.UserName,
+                        Token = refreshToken,
+                        Created = DateTime.UtcNow
                     });
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Database token authentication failed: {ex.Message}");
+                await _db.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    userId = user.UserName,
+                    userName = user.UserName,
+                    userRoles = userRoles,
+                    token = token,
+                    refreshToken = refreshToken
+                });
             }
 
             // 2. Fallback: DevUsers in appsettings.Development.json if DB fails or user not found in DB
@@ -271,48 +215,61 @@ namespace Dotnet10MvcApi.Controllers.Api
         }
 
         // POST /TOKENLOGOUT
+        // POST & GET /api/account/logout
+        // POST & GET /api/account/logoff
+        // POST & GET /api/account/signout
         [HttpPost]
+        [HttpGet]
         [Route("TOKENLOGOUT")]
+        [Route("api/account/logout")]
+        [Route("api/account/logoff")]
+        [Route("api/account/signout")]
         public async Task<IActionResult> SignOutToken(
             [FromQuery] string? token,
-            [FromForm] string? formToken)
+            [FromForm] string? formToken,
+            [FromQuery] string? refreshToken,
+            [FromForm] string? formRefreshToken)
         {
-            var inputToken = token ?? formToken;
-            if (string.IsNullOrWhiteSpace(inputToken))
-            {
-                return BadRequest("Token is required.");
-            }
+            var inputToken = token ?? formToken ?? refreshToken ?? formRefreshToken;
+            var username = User.Identity?.Name;
 
-            try
+            if (!string.IsNullOrWhiteSpace(inputToken))
             {
-                var principal = _tokenManager.GetPrincipalFromExpiredToken(inputToken);
-                if (principal?.Identity?.Name != null)
+                try
                 {
-                    var username = principal.Identity.Name;
-
-                    if (_devUserService.IsDevUser(username))
+                    var principal = _tokenManager.GetPrincipalFromExpiredToken(inputToken);
+                    if (principal?.Identity?.Name != null)
                     {
-                        return Ok("Refresh Token successfully removed. Account has been signed out.");
+                        username = principal.Identity.Name;
                     }
-
-                    try
-                    {
-                        var tokenToRemove = await _db.RefreshTokens.FirstOrDefaultAsync(x => 
-                            x.UserName.ToLower() == username.ToLower());
-
-                        if (tokenToRemove != null)
-                        {
-                            _db.RefreshTokens.Remove(tokenToRemove);
-                            await _db.SaveChangesAsync();
-                            return Ok("Refresh Token successfully removed. Account has been signed out.");
-                        }
-                    }
-                    catch { }
                 }
+                catch { }
             }
-            catch { }
 
-            return BadRequest("Invalid Token");
+            if (!string.IsNullOrEmpty(username))
+            {
+                if (_devUserService.IsDevUser(username))
+                {
+                    return Ok(new { message = "Refresh Token successfully removed. Account has been signed out." });
+                }
+
+                try
+                {
+                    var tokensToRemove = await _db.RefreshTokens
+                        .Where(x => x.UserName.ToLower() == username.ToLower())
+                        .ToListAsync();
+
+                    if (tokensToRemove.Any())
+                    {
+                        _db.RefreshTokens.RemoveRange(tokensToRemove);
+                        await _db.SaveChangesAsync();
+                    }
+                    return Ok(new { message = "Refresh Token successfully removed. Account has been signed out." });
+                }
+                catch { }
+            }
+
+            return Ok(new { message = "Account successfully signed out." });
         }
 
         // POST /api/account/register
@@ -343,41 +300,11 @@ namespace Dotnet10MvcApi.Controllers.Api
                 }
             }
 
-            var cleanUsername = inputUsername.Trim().ToLower();
+            var (newId, error) = await _userAccountService.CreateUserAsync(inputUsername, inputPassword, inputRole);
+            if (newId == null)
+                return BadRequest(error ?? "Registration failed.");
 
-            try
-            {
-                var existingUser = await _db.Users.FirstOrDefaultAsync(x => x.UserName == cleanUsername);
-                if (existingUser != null || _devUserService.IsDevUser(cleanUsername))
-                {
-                    return BadRequest("Account already exists");
-                }
-
-                UserAccount.CreatePasswordHash(inputPassword, out byte[] passwordHash, out byte[] passwordSalt);
-                var newUser = new UserAccount
-                {
-                    Id = Guid.NewGuid(),
-                    UserName = cleanUsername,
-                    PasswordHash = passwordHash,
-                    PasswordSalt = passwordSalt,
-                    CreatedOn = DateTime.Now,
-                    IsActive = true,
-                    Roles = System.Text.RegularExpressions.Regex.Replace(inputRole, @"\s+", "")
-                };
-
-                _db.Users.Add(newUser);
-                await _db.SaveChangesAsync();
-
-                return Ok(new 
-                { 
-                    userId = newUser.UserName,
-                    message = "Account successfully created" 
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Database error during registration: {ex.Message}");
-            }
+            return Ok(new { userId = inputUsername, message = "Account successfully created" });
         }
 
         // POST /api/account/registerbyadmin
@@ -401,41 +328,11 @@ namespace Dotnet10MvcApi.Controllers.Api
                 return BadRequest("Username and password are required.");
             }
 
-            var cleanUsername = inputUsername.Trim().ToLower();
+            var (newId2, error2) = await _userAccountService.CreateUserAsync(inputUsername, inputPassword, inputRoles, allowAdmin: true);
+            if (newId2 == null)
+                return BadRequest(error2 ?? "Registration failed.");
 
-            try
-            {
-                var existingUser = await _db.Users.FirstOrDefaultAsync(x => x.UserName == cleanUsername);
-                if (existingUser != null || _devUserService.IsDevUser(cleanUsername))
-                {
-                    return BadRequest("Account already registered");
-                }
-
-                UserAccount.CreatePasswordHash(inputPassword, out byte[] passwordHash, out byte[] passwordSalt);
-                var newUser = new UserAccount
-                {
-                    Id = Guid.NewGuid(),
-                    UserName = cleanUsername,
-                    PasswordHash = passwordHash,
-                    PasswordSalt = passwordSalt,
-                    CreatedOn = DateTime.Now,
-                    IsActive = true,
-                    Roles = System.Text.RegularExpressions.Regex.Replace(inputRoles, @"\s+", "")
-                };
-
-                _db.Users.Add(newUser);
-                await _db.SaveChangesAsync();
-
-                return Ok(new 
-                { 
-                    userId = newUser.UserName,
-                    message = "Account successfully created" 
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Database error during registration: {ex.Message}");
-            }
+            return Ok(new { userId = inputUsername, message = "Account successfully created" });
         }
 
         // POST /api/account/changepassword
@@ -458,39 +355,12 @@ namespace Dotnet10MvcApi.Controllers.Api
                 return BadRequest("Username and new password are required.");
             }
 
-            var cleanUsername = inputUsername.Trim().ToLower();
+            var skipVerification = User.Identity?.IsAuthenticated == true &&
+                User.Claims.Any(c => c.Type == System.Security.Claims.ClaimTypes.Role && c.Value == UserAccount.DEFAULT_ADMIN_ROLENAME);
 
-            try
-            {
-                var user = await _db.Users.FirstOrDefaultAsync(x => x.UserName == cleanUsername);
-                if (user == null)
-                {
-                    return BadRequest("Password change failed");
-                }
-
-                var forceChangeIfAdmin = false;
-                if (User.Identity?.IsAuthenticated == true)
-                {
-                    var identityRoles = User.Claims
-                        .Where(c => c.Type == ClaimTypes.Role)
-                        .Select(c => c.Value);
-                    forceChangeIfAdmin = identityRoles.Contains(UserAccount.DEFAULT_ADMIN_ROLENAME);
-                }
-
-                var validPassword = forceChangeIfAdmin || UserAccount.VerifyPasswordHash(inputCurrentPassword, user.PasswordSalt, user.PasswordHash);
-                if (validPassword)
-                {
-                    UserAccount.CreatePasswordHash(inputNewPassword, out byte[] passwordHash, out byte[] passwordSalt);
-                    user.PasswordHash = passwordHash;
-                    user.PasswordSalt = passwordSalt;
-
-                    _db.Entry(user).State = EntityState.Modified;
-                    await _db.SaveChangesAsync();
-
-                    return Ok("Password successfully changed");
-                }
-            }
-            catch { }
+            var changed = await _userAccountService.ChangePasswordAsync(inputUsername, inputCurrentPassword, inputNewPassword, skipVerification);
+            if (changed)
+                return Ok("Password successfully changed");
 
             return BadRequest("Password change failed");
         }

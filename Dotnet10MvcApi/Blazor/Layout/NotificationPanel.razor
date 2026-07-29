@@ -1,0 +1,82 @@
+
+
+<MudBreakpointProvider OnBreakpointChanged="OnBreakpointChanged" />
+
+@if (_isConnected)
+{
+    <MudBadge Dot="true" Color="Color.Error" Overlap="true" Visible="_hasNewNotification">
+        @if (_isMobile)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" OnClick="@(() => { OpenAllDialog(); _hasNewNotification = false; })" />
+        }
+        else
+        {
+            <MudMenu Class="no-background" Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" @onmouseenter="@(() => { _hasNewNotification = false; })">
+                @if (_notifications.Any())
+                {
+                    @foreach (var notif in _notifications.Take(5))
+                    {
+                        <MudMenuItem OnClick="@(() => NavigateTo(notif.NavigateToUrl))">
+                            <div style="display: flex; flex-direction: column; max-width: 280px;">
+                                <MudText Typo="Typo.subtitle2" Color="@GetColor(notif.NotificationType)">
+                                    @notif.Title
+                                </MudText>
+                                <MudText Typo="Typo.body2">@notif.Content</MudText>
+                                <MudText Typo="Typo.caption" Class="text-muted mb-1">
+                                    @GetHumanizedTime(notif.CreatedOn)
+                                </MudText>
+                            </div>
+                        </MudMenuItem>
+                    }
+
+                    <MudDivider />
+                    <MudMenuItem OnClick="@OpenAllDialog" Style="text-align: center;">
+                        <MudText Typo="Typo.caption" Color="Color.Primary">See previous notifications</MudText>
+                    </MudMenuItem>
+                }
+                else
+                {
+                    <MudMenuItem Disabled="true">No notifications</MudMenuItem>
+                }
+            </MudMenu>
+        }
+    </MudBadge>
+
+    <MudDialog @bind-Visible="_isAllDialogOpen"
+               Options="_dialogOptions"
+               Class="mud-dialog-scrollable"
+               Style="height: 100dvh; max-height: 100dvh;">
+        <TitleContent>
+            <MudGrid Justify="Justify.Center" Class="px-2" Style="min-height: 48px;">
+                <MudItem xs="3" Class="d-flex align-center">
+                    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                                   Color="Color.Inherit"
+                                   OnClick="CloseAllDialog"
+                                   Edge="Edge.Start" />
+                </MudItem>
+                <MudItem xs="6" Class="d-flex justify-center align-center">
+                    <MudText Typo="Typo.h6" Class="font-weight-500">All Notifications</MudText>
+                </MudItem>
+                <MudItem xs="3" />
+            </MudGrid>
+        </TitleContent>
+
+        <DialogContent>
+            <MudList T="string">
+                @foreach (var notif in _notifications.OrderByDescending(n => n.CreatedOn))
+                {
+                    <MudListItem OnClick="@(() => NavigateTo(notif.NavigateToUrl))">
+                        <MudText Typo="Typo.subtitle2" Color="@GetColor(notif.NotificationType)">
+                            @notif.Title
+                        </MudText>
+                        <MudText Typo="Typo.caption" Class="text-muted">
+                            @notif.CreatedOn.ToLocalTime().ToString("g")
+                        </MudText>
+                        <MudText Typo="Typo.body2">@notif.Content</MudText>
+                    </MudListItem>
+                    <MudDivider />
+                }
+            </MudList>
+        </DialogContent>
+    </MudDialog>
+}

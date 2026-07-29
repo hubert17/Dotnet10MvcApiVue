@@ -1,0 +1,254 @@
+@using System.ComponentModel.DataAnnotations
+@inject ISnackbar Snackbar
+
+<PageTitle>Drawer Demo</PageTitle>
+
+<MudGrid Class="mt-2">
+    <!-- Live Demo Controller Card -->
+    <MudItem xs="12" md="4">
+        <MudCard Outlined="true" Class="pa-4 rounded-lg" Style="height: 100%; min-height: 380px;">
+            <MudCardHeader>
+                <CardHeaderAvatar>
+                    <MudAvatar Color="Color.Primary" Variant="Variant.Filled">
+                        <MudIcon Icon="@Icons.Material.Filled.Settings" />
+                    </MudAvatar>
+                </CardHeaderAvatar>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6" Class="font-weight-bold">Drawer Controller</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Customize the drawer behavior</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudStack Spacing="3">
+                    <MudSelect T="Anchor" Label="Anchor Position" @bind-Value="_anchor" AnchorOrigin="Origin.BottomLeft" Variant="Variant.Outlined" Dense="true">
+                        <MudSelectItem Value="Anchor.Right">Right (Default)</MudSelectItem>
+                        <MudSelectItem Value="Anchor.Left">Left</MudSelectItem>
+                        <MudSelectItem Value="Anchor.Top">Top</MudSelectItem>
+                        <MudSelectItem Value="Anchor.Bottom">Bottom</MudSelectItem>
+                    </MudSelect>
+
+                    <MudSelect T="string" Label="Drawer Width" @bind-Value="_width" AnchorOrigin="Origin.BottomLeft" Variant="Variant.Outlined" Dense="true" Disabled="@(_anchor == Anchor.Top || _anchor == Anchor.Bottom)">
+                        <MudSelectItem Value='""'>Auto (Default)</MudSelectItem>
+                        <MudSelectItem Value='"320px"'>320px (Compact)</MudSelectItem>
+                        <MudSelectItem Value='"420px"'>420px (Standard)</MudSelectItem>
+                        <MudSelectItem Value='"550px"'>550px (Wide)</MudSelectItem>
+                        <MudSelectItem Value='"100%"'>100% (Full Screen)</MudSelectItem>
+                    </MudSelect>
+
+                    <MudSwitch T="bool" @bind-Value="_overlay" Color="Color.Primary" Label="Show Backdrop Overlay" />
+                    <MudSwitch T="bool" @bind-Value="_overlayClickToClose" Color="Color.Primary" Label="Click Overlay to Close" Disabled="!_overlay" />
+                </MudStack>
+            </MudCardContent>
+            <MudCardActions Class="justify-center">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="OpenDrawer"
+                           Class="px-6 py-2 rounded-pill font-weight-bold shadow-md"
+                           Size="Size.Large">
+                    Add New Item
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <!-- Component Info & Features -->
+    <MudItem xs="12" md="8">
+        <MudCard Outlined="true" Class="pa-6 rounded-lg mud-background-grey" Style="height: 100%; min-height: 380px;">
+            <MudText Typo="Typo.h5" Class="font-weight-bold mb-3" Color="Color.Primary">MudDrawer Overview</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">
+                The <code>MudDrawer</code> component acts as a sliding sidebar or slide-over sheet container. It is typically anchored to one of the four edges of the screen and is perfect for detail views, filters, menus, or context-sensitive creation forms without disrupting the main page context.
+            </MudText>
+            
+            <MudText Typo="Typo.subtitle1" Class="font-weight-bold mt-4 mb-2">Key Highlights of this Demo:</MudText>
+            <MudList T="string" ReadOnly="true" Dense="true" Class="pa-0">
+                <MudListItem Icon="@Icons.Material.Filled.CheckCircleOutline" IconColor="Color.Success">
+                    <strong>Seamless Form Flow:</strong> Shows how to place complex edit/create operations inside a temporary side-panel.
+                </MudListItem>
+                <MudListItem Icon="@Icons.Material.Filled.CheckCircleOutline" IconColor="Color.Success">
+                    <strong>Responsive Design:</strong> Drawer anchors and widths adapt automatically to the workspace context.
+                </MudListItem>
+                <MudListItem Icon="@Icons.Material.Filled.CheckCircleOutline" IconColor="Color.Success">
+                    <strong>Validation & Feedback:</strong> Features complete input validation, loading overlays, and snackbar indicators.
+                </MudListItem>
+            </MudList>
+            
+            <div class="d-flex flex-wrap gap-2 mt-6">
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Text" Size="Size.Small">MudBlazor Core</MudChip>
+                <MudChip T="string" Color="Color.Secondary" Variant="Variant.Text" Size="Size.Small">Temporary Variant</MudChip>
+                <MudChip T="string" Color="Color.Info" Variant="Variant.Text" Size="Size.Small">Form Validation</MudChip>
+            </div>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<!-- Interactive Drawer -->
+<MudDrawer @bind-Open="_drawerOpen"
+           Anchor="_anchor"
+           Width="@_width"
+           Height="@(_anchor == Anchor.Top || _anchor == Anchor.Bottom ? "auto" : "100%")"
+           Variant="DrawerVariant.Temporary"
+           Overlay="_overlay"
+           OverlayAutoClose="_overlayClickToClose"
+           Elevation="16">
+    
+    <div class="d-flex flex-column h-100">
+        <!-- Styled Drawer Header using native primary theme -->
+        <div class="mud-theme-primary px-5 py-4 d-flex justify-space-between align-center">
+            <div>
+                <MudText Typo="Typo.h6" Class="font-weight-bold" Color="Color.Inherit">Create New Item</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Inherit" Class="opacity-75">Add a new record to the catalog</MudText>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="CloseDrawer" Size="Size.Medium" />
+        </div>
+
+        <!-- Scrollable Form Content -->
+        <div class="flex-grow-1 overflow-y-auto px-6 py-4">
+            @if (_isSaving)
+            {
+                <div class="d-flex flex-column justify-center align-center h-100" style="min-height: 250px;">
+                    <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-3" />
+                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold">Saving changes...</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Writing data to store</MudText>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@_itemModel" OnValidSubmit="HandleValidSubmit" @ref="_editForm">
+                    <DataAnnotationsValidator />
+                    <MudStack Spacing="3">
+                        <MudTextField Label="Item Name" 
+                                       @bind-Value="_itemModel.Name" 
+                                       For="@(() => _itemModel.Name)" 
+                                       Variant="Variant.Outlined" 
+                                       Required="true" />
+
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" sm="6">
+                                <MudSelect T="string" Label="Category" @bind-Value="_itemModel.Category" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomLeft">
+                                    <MudSelectItem Value='"Electronics"'>Electronics</MudSelectItem>
+                                    <MudSelectItem Value='"Fashion"'>Fashion</MudSelectItem>
+                                    <MudSelectItem Value='"Home"'>Home & Living</MudSelectItem>
+                                    <MudSelectItem Value='"Groceries"'>Groceries</MudSelectItem>
+                                    <MudSelectItem Value='"Books"'>Books & Media</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField Label="Price ($)" 
+                                                 @bind-Value="_itemModel.Price" 
+                                                 For="@(() => _itemModel.Price)" 
+                                                 Variant="Variant.Outlined" 
+                                                 Format="F2" 
+                                                 Min="0.01M" 
+                                                 Required="true" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudDatePicker Label="Created Date" @bind-Date="_itemModel.CreatedDate" Variant="Variant.Outlined" Editable="true" />
+
+                        <MudTextField Label="Description" 
+                                       @bind-Value="_itemModel.Description" 
+                                       Variant="Variant.Outlined" 
+                                       Lines="3" />
+
+                        <MudSwitch T="bool" @bind-Value="_itemModel.IsActive" Color="Color.Success" Label="Publish Immediately (Active)" />
+                    </MudStack>
+                    
+                    <button type="submit" style="display:none"></button>
+                </EditForm>
+            }
+        </div>
+
+        <MudDivider />
+
+        <!-- Form Actions Footer -->
+        @if (!_isSaving)
+        {
+            <div class="px-6 py-4 d-flex gap-3 justify-end">
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="CloseDrawer" Class="px-5 rounded-pill">
+                    Cancel
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="TriggerFormSubmit" Class="px-6 rounded-pill font-weight-bold">
+                    Save Record
+                </MudButton>
+            </div>
+        }
+    </div>
+</MudDrawer>
+
+@code {
+    private bool _drawerOpen = false;
+    private bool _isSaving = false;
+    private EditForm? _editForm;
+
+    private Anchor _anchor = Anchor.Right;
+    private string _width = "420px";
+    private bool _overlay = true;
+    private bool _overlayClickToClose = true;
+
+    private ItemModel _itemModel = new();
+
+    private void OpenDrawer()
+    {
+        _itemModel = new();
+        _drawerOpen = true;
+    }
+
+    private void CloseDrawer()
+    {
+        _drawerOpen = false;
+    }
+
+    private async Task TriggerFormSubmit()
+    {
+        if (_editForm?.EditContext is not null)
+        {
+            var isValid = _editForm.EditContext.Validate();
+            if (isValid)
+            {
+                await HandleValidSubmit();
+            }
+            else
+            {
+                Snackbar.Add("Please fix the validation errors in the form.", Severity.Warning);
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        _isSaving = true;
+        StateHasChanged();
+
+        await Task.Delay(1500);
+
+        _isSaving = false;
+        _drawerOpen = false;
+
+        Snackbar.Add($"Success: Item '{_itemModel.Name}' ({_itemModel.Category}) created successfully at {_itemModel.Price:C2}!", Severity.Success, config => 
+        {
+            config.Icon = Icons.Material.Filled.CheckCircle;
+            config.ShowCloseIcon = true;
+        });
+    }
+
+    public class ItemModel
+    {
+        [Required(ErrorMessage = "Item name is required")]
+        [StringLength(30, MinimumLength = 3, ErrorMessage = "Name must be between 3 and 30 characters")]
+        public string Name { get; set; } = "";
+
+        [Required(ErrorMessage = "Please select a category")]
+        public string Category { get; set; } = "Electronics";
+
+        [Required(ErrorMessage = "Item price is required")]
+        [Range(0.01, 50000.0, ErrorMessage = "Price must be between $0.01 and $50,000.00")]
+        public decimal? Price { get; set; }
+
+        public string Description { get; set; } = "";
+        
+        public bool IsActive { get; set; } = true;
+        
+        public DateTime? CreatedDate { get; set; } = DateTime.Today;
+    }
+}

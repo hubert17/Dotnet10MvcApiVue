@@ -1,0 +1,61 @@
+@page "/products"
+@attribute [Authorize]
+
+@using Microsoft.EntityFrameworkCore
+@using Dotnet10MvcApi.Data
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Products — Dotnet10 Blazor</PageTitle>
+<h1>Products</h1>
+
+<MudTextField T="string" ValueChanged="@(s => OnSearch(s))" Placeholder="Search" Variant="Variant.Outlined"
+              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+              IconSize="Size.Medium" Class="mt-0 mb-4" Clearable="true" />
+
+<MudSimpleTable Hover="true" Style="overflow-x: auto;">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th class="text-right">Price</th>
+            <th>Unit</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var productRow in products)
+        {
+            <tr>
+                <td>@productRow.Id</td>
+                <td>@productRow.Name</td>
+                <td class="text-right">@productRow.UnitPrice.ToString("N2")</td>
+                <td>@productRow.Unit</td>
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    List<Product> products = new();
+    string strSearch = string.Empty;
+
+    private void LoadProducts()
+    {
+        using var db = DbFactory.CreateDbContext();
+        if (!string.IsNullOrEmpty(strSearch))
+            products = db.Products.Where(x => x.Name!.ToLower().Contains(strSearch.ToLower())).ToList();
+        else
+            products = db.Products.ToList();
+    }
+
+    protected override void OnInitialized()
+    {
+        LoadProducts();
+    }
+
+    private void OnSearch(string text)
+    {
+        strSearch = text;
+        LoadProducts();
+    }
+}

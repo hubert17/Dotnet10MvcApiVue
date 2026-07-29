@@ -1,0 +1,183 @@
+@page "/auth"
+@attribute [Authorize]
+
+@inject NavigationManager NavManager
+@inject ISnackbar Snack
+
+<PageTitle>Authorization Info - Blazor Server</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4 pb-12">
+    <!-- Profile & Auth Header -->
+    <MudCard Outlined="true" Class="mb-6 pa-2" Style="background: linear-gradient(135deg, var(--mud-palette-surface) 0%, var(--mud-palette-background-grey) 100%);">
+        <MudCardContent>
+            <div class="d-flex flex-wrap align-center justify-space-between gap-4">
+                <div class="d-flex align-center gap-4">
+                    <MudAvatar Color="Color.Primary" Size="Size.Large" Style="width: 64px; height: 64px; font-size: 1.8rem; font-weight: bold;">
+                        @(string.IsNullOrEmpty(username) ? "U" : username.Substring(0, 1).ToUpper())
+                    </MudAvatar>
+                    <div>
+                        <div class="d-flex align-center gap-2 mb-1">
+                            <MudText Typo="Typo.h5" Class="font-weight-bold">@username</MudText>
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Verified">Authenticated</MudChip>
+                        </div>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">User ID: <code class="px-1 rounded" style="background: var(--mud-palette-background-grey);">@(userid ?? "N/A")</code></MudText>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.LockReset" OnClick='() => NavManager.NavigateTo("change-password")'>
+                        Change Password
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Logout" OnClick='() => NavManager.NavigateTo("logout", true)'>
+                        Logout
+                    </MudButton>
+                </div>
+            </div>
+        </MudCardContent>
+    </MudCard>
+
+    <MudGrid>
+        <!-- Roles & Identity Details -->
+        <MudItem xs="12" md="4">
+            <MudCard Outlined="true" Class="h-100 pa-2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Security" Color="Color.Primary" />
+                            <MudText Typo="Typo.h6" Class="font-weight-bold">Identity & Roles</MudText>
+                        </div>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.subtitle2" Class="font-weight-bold mb-1">Assigned Security Roles:</MudText>
+                    <div class="d-flex flex-wrap gap-1 mb-4">
+                        @if (roleList.Any())
+                        {
+                            @foreach (var role in roleList)
+                            {
+                                <MudChip T="string" Color="Color.Info" Size="Size.Small" Icon="@Icons.Material.Filled.AdminPanelSettings">@role</MudChip>
+                            }
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">No specific roles assigned</MudText>
+                        }
+                    </div>
+
+                    <MudDivider Class="my-3" />
+
+                    <MudText Typo="Typo.subtitle2" Class="font-weight-bold mb-2">Auth Scheme Overview:</MudText>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Scheme Name:</MudText>
+                            <MudText Typo="Typo.caption" Class="font-weight-bold">.AspNetCore.Cookies</MudText>
+                        </div>
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Cookie Path:</MudText>
+                            <MudText Typo="Typo.caption" Class="font-weight-bold">/ (Shared Monolith)</MudText>
+                        </div>
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Identity Type:</MudText>
+                            <MudText Typo="Typo.caption" Class="font-weight-bold">@identityType</MudText>
+                        </div>
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Total Claims:</MudText>
+                            <MudChip T="string" Color="Color.Default" Size="Size.Small">@claimsList.Count</MudChip>
+                        </div>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <!-- Claims Explorer Table -->
+        <MudItem xs="12" md="8">
+            <MudCard Outlined="true" Class="h-100 pa-2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <div class="d-flex align-center justify-space-between">
+                            <div class="d-flex align-center gap-2">
+                                <MudIcon Icon="@Icons.Material.Filled.ListAlt" Color="Color.Secondary" />
+                                <MudText Typo="Typo.h6" Class="font-weight-bold">Active Security Claims</MudText>
+                            </div>
+                            <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Outlined">ClaimsPrincipal</MudChip>
+                        </div>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (claimsList.Any())
+                    {
+                        <MudTable Items="@claimsList" Dense="true" Hover="true" Striped="true" Outlined="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>Claim Type</MudTh>
+                                <MudTh>Value</MudTh>
+                                <MudTh>Issuer</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Type">
+                                    <MudText Typo="Typo.body2" Class="font-weight-bold">@GetFriendlyClaimType(context.Type)</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.7rem; word-break: break-all;">@context.Type</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="Value">
+                                    <code style="font-size: 0.85rem; font-weight: 600;">@context.Value</code>
+                                </MudTd>
+                                <MudTd DataLabel="Issuer">
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">@context.Issuer</MudChip>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info">No claims found in current principal context.</MudAlert>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    [CascadingParameter]
+    Task<AuthenticationState>? AuthState { get; set; }
+
+    string? username;
+    string? userid;
+    string identityType = "ClaimsIdentity";
+    List<string> roleList = new();
+    List<System.Security.Claims.Claim> claimsList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is not null)
+        {
+            var state = await AuthState;
+            var user = state?.User;
+
+            if (user?.Identity?.IsAuthenticated == true)
+            {
+                username = user.Identity.Name ?? "Authenticated User";
+                identityType = user.Identity.AuthenticationType ?? "ClaimsIdentity";
+
+                claimsList = user.Claims.ToList();
+
+                userid = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                      ?? user.FindFirst("sub")?.Value;
+
+                roleList = user.Claims
+                    .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role || c.Type == "role")
+                    .Select(c => c.Value)
+                    .Distinct()
+                    .ToList();
+            }
+        }
+    }
+
+    private string GetFriendlyClaimType(string fullType)
+    {
+        if (fullType.Contains("/"))
+        {
+            return fullType.Substring(fullType.LastIndexOf('/') + 1);
+        }
+        return fullType;
+    }
+}

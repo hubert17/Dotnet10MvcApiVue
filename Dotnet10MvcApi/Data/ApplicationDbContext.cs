@@ -19,6 +19,8 @@ namespace Dotnet10MvcApi.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<Song> Songs { get; set; }
 
+        public DbSet<BlazorNotification> BlazorNotifications { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -37,6 +39,12 @@ namespace Dotnet10MvcApi.Data
 
             modelBuilder.Entity<RefreshToken>()
                 .HasIndex(r => r.Token);
+
+            modelBuilder.Entity<BlazorNotification>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

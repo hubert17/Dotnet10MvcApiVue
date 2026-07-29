@@ -1,0 +1,90 @@
+@inherits BlazorStateComponent
+@using BlazorState
+@using Dotnet10MvcApi.Blazor.States
+
+<style>
+    .mud-nav-link.mud-ripple.active, .mud-nav-link.mud-ripple:hover {
+        background-color: @(IsDarkMode ? "var(--mud-palette-dark-lighten)" : "rgba(255, 255, 255, 0.15)");
+    }
+
+    /* Light mode sidebar specific overrides */
+    .app-nav-drawer {
+        background-color: var(--mud-palette-primary) !important;
+    }
+
+    .app-nav-drawer .mud-nav-link {
+        color: rgba(255, 255, 255, 0.75) !important;
+        transition: background-color 0.15s, color 0.15s;
+    }
+
+        .app-nav-drawer .mud-nav-link .mud-icon-root {
+            color: rgba(255, 255, 255, 0.75) !important;
+            transition: color 0.15s;
+        }
+
+        .app-nav-drawer .mud-nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff !important;
+        }
+
+            .app-nav-drawer .mud-nav-link:hover .mud-icon-root {
+                color: #ffffff !important;
+            }
+
+        .app-nav-drawer .mud-nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            color: #ffffff !important;
+            font-weight: 500;
+        }
+
+            .app-nav-drawer .mud-nav-link.active .mud-icon-root {
+                color: #ffffff !important;
+            }
+
+    .app-nav-drawer .mud-divider {
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    .app-nav-drawer .mud-nav-group .mud-nav-group-heading {
+        color: rgba(255, 255, 255, 0.75) !important;
+    }
+
+        .app-nav-drawer .mud-nav-group .mud-nav-group-heading:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff !important;
+        }
+
+    .app-nav-drawer .mud-typography-subtitle2 {
+        color: rgba(255, 255, 255, 0.6) !important;
+    }
+</style>
+
+<MudNavMenu Class="pa-3" Rounded Margin="Margin.Normal" Color="Color.Inherit">
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Home" Class="rounded">Home</MudNavLink>
+    <MudNavLink Href="weather" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.WaterDrop" Class="rounded">Weather</MudNavLink>
+    <MudNavLink Href="counter" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.PlusOne" Class="rounded">Counter (@currentCount)</MudNavLink>
+    <MudNavLink Href="demo" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Widgets" Class="rounded">Component Demo</MudNavLink>
+    <MudNavLink Href="auth" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Login" Class="rounded">Auth</MudNavLink>
+    <MudNavLink Href="products" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.ShoppingBag" Class="rounded">Products</MudNavLink>
+    <MudDivider Class="mb-4" />
+
+    <MudText Typo="Typo.subtitle2" Color="Color.Inherit" Class="ml-4 my-3">Links</MudText>
+    <MudNavLink Href="https://mudblazor.com" Icon="@Icons.Custom.Brands.MudBlazor" Target="_blank">MudBlazor</MudNavLink>
+    <MudNavLink Href="https://dotnet.microsoft.com/en-us/apps/aspnet/web-apps/blazor" Icon="@Icons.Custom.Brands.MicrosoftVisualStudio" Target="_blank">Blazor</MudNavLink>
+
+    <MudNavGroup Title="About" Icon="@Icons.Material.Outlined.Person" HideExpandIcon="true">
+        <MudNavLink Href="https://github.com/hubert17" Icon="@Icons.Material.Outlined.Code">Github</MudNavLink>
+        <MudNavLink Href="https://bernardgabon.com" Icon="@Icons.Material.Outlined.Web">BernardGabon.com</MudNavLink>
+    </MudNavGroup>
+    <MudDivider Class="mb-4" />
+
+    <MudNavLink OnClick="OnToggleDarkMode" Icon="@(IsDarkMode ? Icons.Material.Filled.WbSunny : Icons.Material.Filled.Brightness3)">Switch Dark Mode</MudNavLink>
+</MudNavMenu>
+
+@code {
+    [Parameter] public bool IsDarkMode { get; set; }
+    [Parameter] public EventCallback OnToggleDarkMode { get; set; }
+
+    CounterState CounterState => GetState<CounterState>();
+    private int currentCount => CounterState.Count;
+}

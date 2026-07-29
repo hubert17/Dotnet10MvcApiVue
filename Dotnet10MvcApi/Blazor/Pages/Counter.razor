@@ -1,0 +1,33 @@
+@page "/counter"
+
+@inherits BlazorStateComponent
+@using BlazorState
+
+<PageTitle>Counter — Dotnet10 Blazor</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count (shared state): @currentCount</p>
+<MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="Increment">Click me (+5)</MudButton>
+
+<p>&nbsp;</p>
+
+<p role="status">Local count (this circuit only): @localCount</p>
+<MudButton Variant="Variant.Filled" Color="Color.Secondary" @onclick="IncrementLocal">Click me (+1)</MudButton>
+
+@code {
+    CounterState CounterState => GetState<CounterState>();
+    int currentCount => CounterState.Count;
+
+    int localCount = 0;
+
+    async Task Increment()
+    {
+        await Mediator.Send(new CounterState.IncrementCount(5));
+    }
+
+    void IncrementLocal()
+    {
+        localCount++;
+    }
+}

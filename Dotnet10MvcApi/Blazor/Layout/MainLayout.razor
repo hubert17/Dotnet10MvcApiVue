@@ -1,0 +1,128 @@
+@inherits LayoutComponentBase
+@using Dotnet10MvcApi.Blazor.Components
+@using Dotnet10MvcApi.Blazor.Layout
+
+@implements IAsyncDisposable
+
+@inject ILocalStorageService localStorage
+@inject IJSRuntime JS
+@inject NavigationManager NavManager
+
+<AntiforgeryToken />
+
+<MyMudThemeProvider IsDarkMode="_isDarkMode" />
+<MyMudProviders />
+
+<CascadingValue Value="_isDarkMode" Name="IsDarkMode">
+<MudLayout>
+    <MudDrawer @bind-Open="_drawerOpen"
+               ClipMode="DrawerClipMode.Always"
+               Variant="@DrawerVariant.Responsive"
+               Elevation="6"
+               Class="@(_isDarkMode ? "" : "app-nav-drawer")">
+        <NavMenu IsDarkMode="_isDarkMode" OnToggleDarkMode="ToggleDarkMode" />
+    </MudDrawer>
+
+    <MudAppBar id="top-app-bar" Elevation="4">
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Size="Size.Large" />
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudIconButton Icon="@Icons.Material.Outlined.Menu"
+                           Color="Color.Inherit"
+                           Edge="Edge.Start"
+                           OnClick="DrawerToggle" />
+        </MudHidden>
+        <MudText Typo="Typo.h6" Class="ml-3">Dotnet10 MVC + Blazor</MudText>
+
+        <MudSpacer />
+
+        @* Support Links *@
+        <MudHidden Breakpoint="Breakpoint.SmAndUp" Invert="true">
+            <MudMenu EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                     Color="Color.Inherit"
+                     Label="Support"
+                     Dense="true"
+                     AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <MudText Typo="Typo.body2" Class="px-4 py-2"><b>Resources</b></MudText>
+                <MudMenuItem Href="https://mudblazor.com/docs/overview" Target="_blank">MudBlazor Documentation</MudMenuItem>
+                <MudMenuItem Href="https://learn.microsoft.com/aspnet/core/blazor" Target="_blank">Blazor Docs</MudMenuItem>
+            </MudMenu>
+        </MudHidden>
+
+        @* Notification Panel *@
+        <NotificationPanel IncludeSample="true" />
+
+        @* Dark Mode Toggle *@
+        <MudTooltip Text="Toggle Dark Mode">
+            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.Brightness3 : Icons.Material.Filled.WbSunny)"
+                           Color="Color.Inherit"
+                           OnClick="ToggleDarkMode" />
+        </MudTooltip>
+
+        @* GitHub Link *@
+        <MudHidden Breakpoint="Breakpoint.SmAndUp" Invert>
+            <MudTooltip Text="Github">
+                <MudIconButton Icon="@Icons.Custom.Brands.GitHub"
+                               Color="Color.Inherit"
+                               Href="https://github.com/hubert17/Dotnet10MvcApiVue"
+                               Target="_blank" />
+            </MudTooltip>
+        </MudHidden>
+
+        @* User Menu *@
+        <AuthorizeView Context="authState">
+            <MudMenu AnchorOrigin="Origin.TopLeft" Dense Class="mt-1 ml-4">
+                <ActivatorContent Context="userMenuContext">
+                    <MudAvatar Size="Size.Medium" Style="cursor: pointer;" @onclick="userMenuContext.ToggleAsync">
+                        <MudImage Src="https://avatars.githubusercontent.com/u/7923889?v=4" />
+                    </MudAvatar>
+                </ActivatorContent>
+                <ChildContent>
+                    <MudListItem T="string" Text="My Account" Icon="@Icons.Material.Outlined.Person" Href="change-password" />
+                    <MudListItem T="string" Text="Settings" Icon="@Icons.Material.Filled.Settings" />
+                    <MudListItem T="string" Text="Logout" Icon="@Icons.Material.Filled.Logout" OnClick='() => NavManager.NavigateTo("logout", true)' />
+                    <MudDivider />
+                </ChildContent>
+            </MudMenu>
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudMainContent id="main-content-container">
+        <MudContainer Class="mt-6 mb-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+
+</MudLayout>
+</CascadingValue>
+
+@* Global Error UI *@
+<div id="blazor-error-ui" class="blazor-error-ui--web">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">×</a>
+</div>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = false;
+
+    private void DrawerToggle() => _drawerOpen = !_drawerOpen;
+
+    private async Task ToggleDarkMode()
+    {
+        _isDarkMode = !_isDarkMode;
+        await localStorage.SetItemAsync("isDarkMode", _isDarkMode);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isDarkMode = await localStorage.GetItemAsync<bool>("isDarkMode");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await ValueTask.CompletedTask;
+    }
+}

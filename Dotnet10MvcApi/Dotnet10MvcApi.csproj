@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,6 +32,13 @@
     <PackageReference Include="Piranha.Data.EF.SQLite" Version="12.0.0" />
     <PackageReference Include="Piranha.ImageSharp" Version="12.0.0" />
     <PackageReference Include="Piranha.Local.FileStorage" Version="12.0.0" />
+
+    <!-- Blazor Server + MudBlazor -->
+    <PackageReference Include="Blazor-State" Version="10.0.0" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="MudBlazor" Version="9.6.0" />
+    <PackageReference Include="CodeBeam.MudBlazor.Extensions" Version="9.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.9" />
   </ItemGroup>
 
 </Project>

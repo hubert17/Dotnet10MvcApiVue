@@ -1,0 +1,77 @@
+@page "/login"
+@layout Layout.LoginLayout
+@attribute [AllowAnonymous]
+
+@inject ServerCookieAuthService Auth
+@inject HostedAuthStateProvider AuthProvider
+@inject NavigationManager Nav
+@inject ISnackbar Snack
+@inject BlazorOptions BlazorOptions
+
+<PageTitle>Dotnet10 Blazor — Login</PageTitle>
+
+@if (Credential != null)
+{
+    <EditForm Model="Credential" OnValidSubmit="OnLogin" FormName="Credential">
+        <MudLoading Class="ml-15 pl-15" @bind-Loading="wakingUpDb" Overlap="@false" LoaderType="LoaderType.Circular" Text="Waking up database...">
+
+            <MudText Typo="Typo.h4" GutterBottom="true">Login</MudText>
+
+            <MudText>Don't have an account? <MudLink Href="register">Sign Up</MudLink></MudText>
+
+            <MudTextField T="string" @bind-Value="@Credential.Username" name="Credential.Username" ShrinkLabel Label="E-mail / Username" Variant="Variant.Outlined" Class="my-6" Required="true"></MudTextField>
+
+            <MudTextField T="string" @bind-Value="@Credential.Password" name="Credential.Password" ShrinkLabel Label="Password" InputType="InputType.Password" Variant="Variant.Outlined" IconSize="Size.Medium" Required="true" />
+
+            <div Class="d-flex justify-space-between align-center">
+                <MudSpacer />
+                <MudLink Href="#" Class="my-2">Forgot password?</MudLink>
+            </div>
+
+            <MudLoadingButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" LoadingAdornment="Adornment.Start" @bind-Loading="isSubmitting" ButtonType="ButtonType.Submit">Sign In</MudLoadingButton>
+        </MudLoading>
+    </EditForm>
+}
+
+@code {
+    [SupplyParameterFromForm] 
+    public LoginDTO? Credential { get; set; }
+
+    [SupplyParameterFromQuery(Name = "ReturnUrl")] 
+    public string? ReturnUrl { get; set; }
+
+    bool isSubmitting;
+    bool wakingUpDb = false;
+
+    protected override void OnInitialized()
+    {
+        Credential ??= new LoginDTO();
+    }
+
+    async Task OnLogin()
+    {
+        isSubmitting = true;
+        if (await Auth.SignInAsync(Credential.Username, Credential.Password, ReturnUrl))
+        {
+            AuthProvider.Notify();
+            if (Credential.Username.Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase) &&
+                Credential.Password == UserAccount.DEFAULT_ADMIN_LOGIN)
+            {
+                Nav.NavigateTo($"change-password?ReturnUrl={Uri.EscapeDataString(ReturnUrl ?? "/blazor")}", true);
+            }
+            else
+            {
+                Nav.NavigateTo(ReturnUrl ?? "/blazor", true);
+            }
+        }
+        else
+        {
+            Snack.Clear();
+            Snack.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snack.Add("Invalid login credentials. Please try again.", Severity.Error);
+        }
+        isSubmitting = false;
+    }
+
+    public class LoginDTO { public string Username { get; set; } = ""; public string Password { get; set; } = ""; }
+}

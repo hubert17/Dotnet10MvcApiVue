@@ -17,6 +17,7 @@ using Dotnet10MvcApi.Helpers;
 using Dotnet10MvcApi.Models;
 using Dotnet10MvcApi.Models.Entities;
 using Dotnet10MvcApi.Services;
+using Dotnet10MvcApi.Blazor;
 using Dotnet10MvcApi.Models.Cms;
 using Dotnet10MvcApi.Services.Cms;
 using Microsoft.AspNetCore.Antiforgery;
@@ -62,9 +63,25 @@ builder.Services.AddAuthentication(options =>
 })
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
-    options.LoginPath = "/Account/Login";
-    options.LogoutPath = "/Account/Logoff";
+    options.Cookie.Name = ".AspNetCore.Cookies";
+    options.Cookie.Path = "/";
+    options.LoginPath = "/login";
+    options.LogoutPath = "/logout";
     options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
+    options.Events.OnRedirectToLogin = ctx =>
+    {
+        var returnUrl = ctx.Request.PathBase + ctx.Request.Path + ctx.Request.QueryString;
+        var routePrefix = "/" + (builder.Configuration["BlazorSettings:RoutePrefix"] ?? "blazor").Trim('/');
+        if (ctx.Request.PathBase.StartsWithSegments(routePrefix) || ctx.Request.Path.StartsWithSegments(routePrefix))
+        {
+            ctx.Response.Redirect($"{routePrefix}/login?ReturnUrl=" + Uri.EscapeDataString(returnUrl));
+        }
+        else
+        {
+            ctx.Response.Redirect("/login?ReturnUrl=" + Uri.EscapeDataString(returnUrl));
+        }
+        return Task.CompletedTask;
+    };
 })
 .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 {
@@ -171,6 +188,13 @@ builder.Services.AddPiranha(options =>
     options.UseFileStorage(basePath: "wwwroot/cms/uploads/", baseUrl: "~/cms/uploads/", naming: Piranha.Local.FileStorageNaming.UniqueFolderNames);
 });
 
+// Register Blazor Server Components & Services (via BlazorDependencyInjection)
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
+builder.Services.AddBlazorCore(builder.Configuration);
+builder.Services.AddSingleton<Microsoft.AspNetCore.Routing.MatcherPolicy, Dotnet10MvcApi.Services.Blazor.BlazorPathBaseEndpointSelectorPolicy>();
+
 // Register the Piranha Manager security bridge (LocalAuth ISecurity)
 // This allows the manager's login/save/publish to delegate to our cookie auth
 builder.Services.AddScoped<Piranha.Manager.LocalAuth.ISecurity, Dotnet10MvcApi.Services.PiranhaManagerSecurity>();
@@ -181,9 +205,9 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var api = scope.ServiceProvider.GetRequiredService<IApi>();
-    App.Init(api);
-    App.Blocks.Register<Dotnet10MvcApi.Models.Cms.Blocks.HeroBlock>();
-    App.Blocks.Register<Dotnet10MvcApi.Models.Cms.Blocks.YouTubeBlock>();
+    Piranha.App.Init(api);
+    Piranha.App.Blocks.Register<Dotnet10MvcApi.Models.Cms.Blocks.HeroBlock>();
+    Piranha.App.Blocks.Register<Dotnet10MvcApi.Models.Cms.Blocks.YouTubeBlock>();
     new ContentTypeBuilder(api)
         .AddAssembly(typeof(Program).Assembly)
         .Build();
@@ -205,8 +229,24 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-// 4. Set up physical static files (so wwwroot/index.html is served at /)
-app.UseDefaultFiles();
+// Blazor sub-path rewriter: strip the configured prefix from the request path BEFORE
+// static files and routing run, so Blazor's @page "/" and static assets (_content/...) match correctly.
+var blazorPrefix = "/" + (builder.Configuration["BlazorSettings:RoutePrefix"] ?? "blazor").Trim('/');
+app.Use(async (ctx, next) =>
+{
+    if (ctx.Request.Path.StartsWithSegments(blazorPrefix, out var remainder))
+    {
+        ctx.Request.PathBase = ctx.Request.PathBase.Add(blazorPrefix);
+        ctx.Request.Path = (remainder.HasValue && !string.IsNullOrEmpty(remainder.Value)) ? remainder : new PathString("/");
+    }
+    await next();
+});
+
+// 4. Set up physical static files (so wwwroot/index.html is served at / only for non-Blazor requests)
+app.UseWhen(ctx => string.IsNullOrEmpty(ctx.Request.PathBase), defaultApp =>
+{
+    defaultApp.UseDefaultFiles();
+});
 app.UseStaticFiles();
 
 // 5. Setup OpenAPI/Scalar UI
@@ -217,6 +257,7 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
 
 // Ensure Anti-Forgery XSRF-TOKEN cookie & contrast fix CSS are populated on /manager requests
 app.Use(async (context, next) =>
@@ -296,13 +337,16 @@ document.addEventListener('DOMContentLoaded', function() {
     await next();
 });
 
-// Enable Piranha CMS Middleware
-app.UsePiranha(options =>
+// Enable Piranha CMS Middleware (bypassed for /blazor requests so Blazor Server endpoints take priority)
+app.UseWhen(ctx => !ctx.Request.PathBase.StartsWithSegments(blazorPrefix) && !ctx.Request.Path.StartsWithSegments(blazorPrefix), piranhaApp =>
 {
-    // Configure TinyMCE editor toolbar
-    EditorConfig.FromFile("editorconfig.json");
-    options.UseManager();
-    options.UseTinyMCE();
+    piranhaApp.UsePiranha(options =>
+    {
+        // Configure TinyMCE editor toolbar
+        EditorConfig.FromFile("editorconfig.json");
+        options.UseManager();
+        options.UseTinyMCE();
+    });
 });
 
 // 6. Map controllers (APIs + MVC routing)
@@ -315,6 +359,12 @@ app.MapGet("/app", async context =>
     context.Response.ContentType = "text/html";
     await context.Response.SendFileAsync(indexPath);
 });
+
+// Map Blazor Server Components. Path-rewrite middleware sets PathBase=/blazor and rewrites Path to /.
+app.MapRazorComponents<Dotnet10MvcApi.Blazor.App>()
+    .AddInteractiveServerRenderMode();
+
+app.MapHub<Dotnet10MvcApi.Services.Blazor.NotificationHub>("/notificationhub");
 
 app.MapControllerRoute(
     name: "default",

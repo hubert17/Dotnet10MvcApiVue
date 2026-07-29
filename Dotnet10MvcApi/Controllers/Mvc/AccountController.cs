@@ -1,15 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Dotnet10MvcApi.Data;
-using Dotnet10MvcApi.Models;
 using Dotnet10MvcApi.Models.Entities;
 using Dotnet10MvcApi.Services;
 
@@ -17,16 +11,18 @@ namespace Dotnet10MvcApi.Controllers.Mvc
 {
     public class AccountController : Controller
     {
-        private readonly ApplicationDbContext _db;
+        private readonly UserAccountService _userAccountService;
         private readonly DevUserService _devUserService;
 
-        public AccountController(ApplicationDbContext db, DevUserService devUserService)
+        public AccountController(UserAccountService userAccountService, DevUserService devUserService)
         {
-            _db = db;
+            _userAccountService = userAccountService;
             _devUserService = devUserService;
         }
 
         [AllowAnonymous]
+        [HttpGet("/Account/Login")]
+        [HttpGet("/login")]
         public async Task<IActionResult> Login(string returnUrl = "/")
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -35,7 +31,8 @@ namespace Dotnet10MvcApi.Controllers.Mvc
         }
 
         [AllowAnonymous]
-        [HttpPost]
+        [HttpPost("/Account/Login")]
+        [HttpPost("/login")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string username, string password, bool rememberme = false, string returnUrl = "/")
         {
@@ -48,67 +45,11 @@ namespace Dotnet10MvcApi.Controllers.Mvc
             var cleanUsername = username.Trim().ToLower();
 
             // 1. Primary: Database Authentication
-            try
+            var user = await _userAccountService.AuthenticateAsync(cleanUsername, password);
+            if (user != null)
             {
-                var user = await _db.Users.FirstOrDefaultAsync(u => u.UserName == cleanUsername);
-
-                if (user != null && user.IsActive && UserAccount.VerifyPasswordHash(password, user.PasswordSalt, user.PasswordHash))
-                {
-                    var claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name, user.UserName),
-                        new Claim(ClaimTypes.Role, user.Roles)
-                    };
-
-                    AddPiranhaAdminClaimsIfAdmin(claims, user.Roles);
-
-                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                    var authProperties = new AuthenticationProperties
-                    {
-                        IsPersistent = rememberme,
-                        ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(20)
-                    };
-
-                    await HttpContext.SignInAsync(
-                        CookieAuthenticationDefaults.AuthenticationScheme,
-                        new ClaimsPrincipal(claimsIdentity),
-                        authProperties);
-
-                    // Update last login
-                    user.LastLogin = DateTime.Now;
-                    _db.Entry(user).State = EntityState.Modified;
-                    await _db.SaveChangesAsync();
-
-                    if (cleanUsername == UserAccount.DEFAULT_ADMIN_LOGIN && password == UserAccount.DEFAULT_ADMIN_LOGIN)
-                    {
-                        return RedirectToAction("ChangePassword");
-                    }
-
-                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                    {
-                        return Redirect(returnUrl);
-                    }
-                    return RedirectToAction("Index", "Home");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Database login check bypassed/failed: {ex.Message}");
-            }
-
-            // 2. Fallback: DevUsers config (appsettings.Development.json) if DB fails or user not found in DB
-            var devUser = _devUserService.ValidateCredentials(cleanUsername, password);
-            if (devUser != null)
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, devUser.Username),
-                    new Claim(ClaimTypes.Role, devUser.Role)
-                };
-
-                AddPiranhaAdminClaimsIfAdmin(claims, devUser.Role);
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var claims = UserAccountService.BuildClaims(user);
+                var claimsIdentity = new System.Security.Claims.ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties
                 {
                     IsPersistent = rememberme,
@@ -117,13 +58,38 @@ namespace Dotnet10MvcApi.Controllers.Mvc
 
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
+                    new System.Security.Claims.ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+
+                if (cleanUsername == UserAccount.DEFAULT_ADMIN_LOGIN && password == UserAccount.DEFAULT_ADMIN_LOGIN)
+                    return RedirectToAction("ChangePassword");
+
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    return Redirect(returnUrl);
+
+                return RedirectToAction("Index", "Home");
+            }
+
+            // 2. Fallback: DevUsers (appsettings.Development.json)
+            var devUser = _devUserService.ValidateCredentials(cleanUsername, password);
+            if (devUser != null)
+            {
+                var claims = UserAccountService.BuildClaims(devUser.Username, devUser.Role);
+                var claimsIdentity = new System.Security.Claims.ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = rememberme,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(20)
+                };
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new System.Security.Claims.ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                {
                     return Redirect(returnUrl);
-                }
+
                 return RedirectToAction("Index", "Home");
             }
 
@@ -138,27 +104,16 @@ namespace Dotnet10MvcApi.Controllers.Mvc
             return View();
         }
 
-        private static void AddPiranhaAdminClaimsIfAdmin(List<Claim> claims, string role)
-        {
-            if (!string.IsNullOrWhiteSpace(role) && role.Equals("admin", StringComparison.OrdinalIgnoreCase))
-            {
-                claims.Add(new Claim(ClaimTypes.Role, "admin"));
-                claims.Add(new Claim(ClaimTypes.Role, "Admin"));
-                try
-                {
-                    foreach (var permission in Piranha.Manager.Permission.All())
-                    {
-                        claims.Add(new Claim(permission, permission));
-                    }
-                }
-                catch { }
-            }
-        }
-
         [HttpGet("/manager/logout")]
         [HttpGet("/manager/login/logout")]
         [HttpPost("/manager/login/logout")]
         [HttpGet("/Account/Logout")]
+        [HttpPost("/Account/Logout")]
+        [HttpGet("/Account/Logoff")]
+        [HttpPost("/Account/Logoff")]
+        [HttpGet("/logout")]
+        [HttpPost("/logout")]
+        [AllowAnonymous]
         public async Task<IActionResult> Logoff()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -182,18 +137,11 @@ namespace Dotnet10MvcApi.Controllers.Mvc
                 return RedirectToAction("ChangePassword");
             }
 
-            var cleanUsername = User.Identity?.Name?.Trim().ToLower();
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserName == cleanUsername);
+            var userName = User.Identity?.Name;
+            var changed = await _userAccountService.ChangePasswordAsync(userName, currentPassword, newPassword);
 
-            if (user != null && UserAccount.VerifyPasswordHash(currentPassword, user.PasswordSalt, user.PasswordHash))
+            if (changed)
             {
-                UserAccount.CreatePasswordHash(newPassword, out byte[] passwordHash, out byte[] passwordSalt);
-                user.PasswordHash = passwordHash;
-                user.PasswordSalt = passwordSalt;
-
-                _db.Entry(user).State = EntityState.Modified;
-                await _db.SaveChangesAsync();
-
                 TempData["alertbox"] = "Password changed successfully.";
                 return RedirectToAction("Logoff");
             }
@@ -219,35 +167,14 @@ namespace Dotnet10MvcApi.Controllers.Mvc
                 return RedirectToAction("Register");
             }
 
-            var cleanUsername = username.Trim().ToLower();
             var cleanRole = string.IsNullOrWhiteSpace(role) ? "user" : role.Trim().ToLower();
 
-            if (cleanRole == UserAccount.DEFAULT_ADMIN_ROLENAME)
+            var (id, error) = await _userAccountService.CreateUserAsync(username, password, cleanRole);
+            if (id == null)
             {
-                cleanRole = "user";
-            }
-
-            var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.UserName == cleanUsername);
-            if (existingUser != null)
-            {
-                TempData["alertbox"] = "Username already exists.";
+                TempData["alertbox"] = error ?? "Registration failed.";
                 return RedirectToAction("Register");
             }
-
-            UserAccount.CreatePasswordHash(password, out byte[] passwordHash, out byte[] passwordSalt);
-            var newUser = new UserAccount
-            {
-                Id = Guid.NewGuid(),
-                UserName = cleanUsername,
-                PasswordHash = passwordHash,
-                PasswordSalt = passwordSalt,
-                CreatedOn = DateTime.Now,
-                IsActive = true,
-                Roles = cleanRole
-            };
-
-            _db.Users.Add(newUser);
-            await _db.SaveChangesAsync();
 
             TempData["alert"] = $"Account successfully created. Welcome {username}!";
             return RedirectToAction("Login");
