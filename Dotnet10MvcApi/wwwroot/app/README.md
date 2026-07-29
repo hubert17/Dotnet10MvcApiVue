@@ -1,103 +1,86 @@
-# GabsVuetifyNoCLINodeWebpack
+# Vue 2 SPA (Multi-Paradigm ASP.NET Core Monolith)
 
-**Vue SPA without CLI, Node, and Webpack**
+**Zero-Node, Zero-Build Vue 2 Single-Page Application**
 
-This is a single-page application that utilizes Vue and Vue Router with a beautiful Material UI from Vuetify. It uses ES6 imports to render components and templates. No Node is required. Simply clone the repository and serve it statically.
+This single-page application (SPA) built with Vue 2 and Vuetify is an integrated component of the multi-paradigm ASP.NET Core monolith (`Dotnet10MvcApi`), served at the `/app` route (`wwwroot/app`). It operates strictly on **native ES modules** and browser-executable code, maintaining our core philosophy of **No Node, No Build** for production runtime.
 
-You can also download this template to create a new single-page application that you can build upon. You can write code in any environment that has a static web server. There are virtually no local dependencies. It uses CDN-hosted libraries.
+---
 
-**Demo**: [https://hubert17.github.io/GabsVuetifyNoCLINodeWebpack](https://hubert17.github.io/GabsVuetifyNoCLINodeWebpack)
+## 🏛️ Architecture & Monolith Context
 
-## Install these [VSCode Extensions](https://marketplace.visualstudio.com/vscode) for the best experience:
+This SPA is hosted within a single ASP.NET Core web process that seamlessly integrates five web paradigms:
 
-- [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
+1. **`/`** – Static Web Root Landing Page (`wwwroot/index.html`).
+2. **`/app`** – **Vue 2 SPA (This App)** – Zero-build, native ES module Single-Page Application.
+3. **`/home`** – Server-Rendered Razor MVC Views with `petite-vue` reactivity.
+4. **`/api`** – Controller-based REST Web APIs with JWT Bearer security.
+5. **`/blogs`, `/articles`, `/manager`** – Piranha CMS v12 content engine and admin management portal.
+
+---
+
+## ⚡ High-Concurrency & Mass Simultaneous User Optimization
+
+This Vue 2 SPA architecture is engineered specifically to handle **mass simultaneous users** efficiently:
+
+- **Zero Server-Side CPU Overhead:** Unlike Server-Side Rendering (SSR) frameworks (Nuxt, Next.js) which consume significant server CPU and RAM per concurrent request rendering HTML strings, this SPA shifts 100% of UI rendering, DOM updates, and client state management to the user's browser/GPU.
+- **Ultra-Lean ASP.NET Core Static Serving:** ASP.NET Core serves the static SPA files (`/app/...`) via high-performance `UseStaticFiles()` middleware. When combined with HTTP/2 parallel streams and browser caching, server resource consumption per connection is negligible.
+- **Stateless API Backend Scaling:** The SPA interacts with ASP.NET Core REST APIs (`/api/...`) via stateless JWT Bearer authorization header tokens. This decouples the client state from the server, allowing backend API nodes to scale horizontally without session stickiness.
+- **Low Payload & Dynamic Module Preloading:** Native ES modules load asynchronously. Critical entry points are parallel-fetched via `<link rel="modulepreload">` tags to eliminate waterfall latency, delivering high responsiveness even for thousands of simultaneous clients.
+
+---
+
+## 🛠️ Development & Debugging Workflow
+
+### ASP.NET Core Host Process (No Live Server Needed)
+Because the SPA is served directly by the ASP.NET Core process, **VSCode's Live Server extension is NOT needed**.
+
+Launch the monolith process locally using x64 architecture (required for MS Access OLE DB drivers):
+
+```powershell
+# Using the debug helper script:
+.\Dotnet10MvcApi\run-debug.bat
+
+# Or directly via dotnet CLI:
+dotnet run --project .\Dotnet10MvcApi --arch x64
+```
+
+Access the SPA in your browser at `http://localhost:5000/app` (or `https://localhost:5001/app`).
+
+### Optional Vite Integration for Agentic AI Debugging (Dev-Only, No Build)
+Vite can optionally be leveraged as a dev-only debugging server specifically tailored for **Agentic AI coding assistants (such as Antigravity)** and browser subagents to rapidly find and fix UI bugs:
+- **Agentic AI Debugger Workflow:** Provides AI subagents with instant Hot Module Replacement (HMR), rich console error overlays, and precise source-mapped stack traces. This enables AI agents to quietly inspect, diagnose, and verify frontend changes in seconds without needing full application restarts or manual browser reloads.
+- **Port & Backend API Proxying:** Runs locally on `http://localhost:5173`. Pre-configured in `vite.config.js` to automatically proxy all `/api` requests to the running ASP.NET Core host process at `http://localhost:5000`.
+- **Strict No-Build Rule:** Vite is **never** used to bundle or compile production assets. Production runtime deployment remains 100% native ES modules served directly by ASP.NET Core from `wwwroot/app`.
+- **CDN Script Toggle (Dev vs. Production):** Production `index.html` uses minified CDN scripts (`vue.min.js`, `vuetify.min.js`). During active AI debugging sessions, AI agents may temporarily switch script tags to unminified dev variants (`vue.js`, `vuetify.js`) for verbose Vue warning messages and DevTools inspection, restoring `.min.js` variants before completing work.
+- **Clean Workspace Strategy (`node_modules`):** If Node tools or Vite are used for AI debugging, `node_modules` must remain strictly `.gitignore`d or installed globally / outside the repository directory. This keeps the codebase clean, lightweight, and free of repository dependency bloat.
+
+### Recommended VSCode Extensions
 - [Template Literal Editor](https://marketplace.visualstudio.com/items?itemName=plievone.vscode-template-literal-editor)
 - [Comment tagged templates](https://marketplace.visualstudio.com/items?itemName=bierner.comment-tagged-templates)
+- [Vue.js devtools (Browser Extension)](https://chromewebstore.google.com/detail/vuejs-devtools/iaajmlceplecbljialhhkmedjlpdblhp)
 - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
-- [Vue.js devtools](https://chrome.google.com/webstore/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd?hl=en)
 
-## Why do I try to avoid using CLI, npm, Webpack, and other build processes?
+*(Note: Live Server extension is omitted as serving is handled natively by the .NET process.)*
 
-- It reduces the learning curve required to start using Vue.js.
-- JavaScript lacks a standard library, so a project with npm usually has a lot of dependencies, increasing the project's size and complexity. For more information, refer to this [article](https://hackernoon.com/whats-really-wrong-with-node-modules-and-why-this-is-your-fault-8ac9fa893823).
-- However, if we don't use npm, we can still install additional libraries by downloading them from a CDN and importing them using HTML `<script>` tags. In this project, I used Material Design Webfont and Vuetify with this method. Importing each library separately with `<script>` tags can be slow and create many variables in the global scope, especially when there are numerous dependencies. Additionally, each dependency must be imported in the correct order (read Waterfall-loading below).
-- Babel is useful for converting ES6 JavaScript into backward-compatible code, but in my case, it's unnecessary since the web browsers of my clients (most modern browsers) already support ES6.
-- Webpack can potentially require extensive configuration and is not beginner-friendly. To learn more, visit [here](https://github.com/charlesfranciscodev/vuejs-playground) and [here](https://github.com/arswaw/VueSpaNONODE).
+---
 
-## What about Component-based CSS?
+## 💡 Why Avoid Heavy Build Pipelines (CLI, npm, Webpack)?
 
-The problem is solved using [goober](https://github.com/cristianbote/goober), a CSS-in-JS solution that is less than 1KB in size.
+1. **Zero Dependency Maintenance & Rot:** Eliminates constant `npm audit` vulnerabilities, lockfile conflicts, and breaking bundler upgrades.
+2. **Instant Developer Feedback:** Edits to `.js` files immediately reflect upon browser refresh without compilation wait times.
+3. **CDN-First Asset Delivery:** Core UI dependencies (Vuetify, Vue 2, Material Design Icons) are fetched from high-speed public CDNs (`cdn.jsdelivr.net`) or cached locally in `wwwroot`.
+4. **Native Browser Standard Execution:** Modern browsers natively support ES modules (`import`/`export`), rendering transpilation steps redundant.
 
-## Waterfall-loading issue
+---
 
-One problem with using JavaScript Modules without a bundler is waterfall-loading. `Main.js` imports `app.js`, and `app.js` imports `BaseButton.js`. As a result, the browser needs to load the files in this order before it can mount our Vue application. However, we can speed up this process by using [modulepreload](https://developers.google.com/web/updates/2017/12/) links. The preload links instruct the browser to load all necessary files, preventing waterfall-loading. To learn more, read [here](https://markus.oberlehner.net/blog/goodbye-webpack-building-vue-applications-without-webpack/).
+## 🌊 Mitigating Waterfall Module Loading
 
-## Production Build with Vite
+To prevent waterfall network loading inherent to unbundled ES module trees (`main.js` -> `app.js` -> `components`):
+- **`modulepreload` Declarations:** `<link rel="modulepreload">` tags are embedded in `index.html` to direct the browser to fetch dependent module scripts in parallel during initial layout parse.
+- **HTTP/2 Multiplexing:** ASP.NET Core and CDN edge servers multiplex module requests over single TCP streams, minimizing latency penalties.
 
-The aim of this project is to quickly develop a single-page app without any compilation or build steps. However, for production, I recommend using Vite, a build tool that aims to provide a faster and leaner development experience for modern web projects. It has a build command that bundles your code with Rollup, pre-configured to output highly optimized static assets for production. To reconfigure the project, follow these steps:
+---
 
-1. Create the `src` folder.
-2. Move the following files to the `src` folder:
+## 👤 Maintainer
 
-    - components
-    - pages
-    - plugins
-    - app.vue.js
-    - main.js
-    - router.js
-    - store.js
-
-3. Update the script src in `index.html`. Add a preceding slash. You can now remove the `modulepreload` since they are no longer needed. Use the minified version of CDN packages by inserting `.min` before the file extension, for example, `vue.min.js`.
-
-    ```html
-    <script type="module" src="/src/main.js"></script>
-    ```
-
-4. Create the following files:
-
-    **package.json**
-
-    ```json
-    {
-        "version": "0.0.0",
-        "scripts": {
-            "dev": "vite",
-            "build": "vite build",
-            "serve": "vite preview"
-        },
-        "devDependencies": {
-            "vite": "^2.3.7"
-        }
-    }
-    ```
-
-    **vite.config.js**
-
-    ```javascript
-    const { createVuePlugin } = require('vite-plugin-vue2');
-
-    module.exports = {
-        plugins: [createVuePlugin()],
-        base: ''
-    };
-    ```
-
-5. Run the following commands:
-
-    ```
-    npm install
-    npm ci
-    npm run build
-    ```
-
-    The building process will start, and the output will be in the `/dist` folder, which you can deploy on any static hosting site. That's it!
-
-Please note that these changes do not affect our primary goal of developing a Vue SPA without CLI, Node, or Webpack. The app can still be served statically without a build process.
-
-## GitHub Actions build support
-
-Even without locally installing NPM, you can still create a production build by simply pushing your code to the master branch of the GitHub repository. GitHub Actions will take care of the build and deployment processes. Check out the YAML script [here](https://github.com/hubert17/GabsVuetifyNoCLINodeWebpack/blob/master/.github/workflows/publish.yml).
-
-## Contributor
-
-1. [Bernard Gabon](https://bernardgabon.com)
+- **Bernard Gabon** ([bernardgabon.com](https://bernardgabon.com))

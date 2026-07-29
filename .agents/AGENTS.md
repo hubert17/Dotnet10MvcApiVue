@@ -86,6 +86,9 @@ These instructions govern all future modifications, tests, and task executions p
     *   **Rule:** Do not reference local vendor asset files (such as Bootstrap, jQuery, Bootbox, Font Awesome, jQuery Validation, jExcel/jSpreadsheet, jSuites, Petite-Vue, Pocket-Vue) in `wwwroot/lib` or `wwwroot/js`. Always link directly to official `cdn.jsdelivr.net` URLs.
     *   **Razor Escaping:** In Razor `.cshtml` files, remember to escape any `@` symbols in npm package CDN URLs (e.g., `https://cdn.jsdelivr.net/npm/@@fortawesome/fontawesome-free@5.15.4/css/all.min.css`).
     *   **Application Custom Styles:** Application-specific custom stylesheets (such as `Site.css` and `Account.css`) remain local in `wwwroot/css/`.
+*   **CDN Script Minification (Development vs. Production):**
+    *   **Production Standard:** `wwwroot/app/index.html` references minified CDN scripts (`vue.min.js`, `vuetify.min.js`, `vue-router.min.js`, `vuex.min.js`).
+    *   **AI Debugging Mode:** During active debugging or troubleshooting session using Vite or browser subagents, AI agents may temporarily switch script tags to unminified dev variants (`vue.js`, `vuetify.js`, etc.) to obtain verbose console warnings and full Vue DevTools hook support. Once debugging is complete, the AI agent must ensure script tags are restored to their production `.min.js` variants before finalizing tasks.
 
 ---
 
@@ -105,6 +108,15 @@ These instructions govern all future modifications, tests, and task executions p
     *   **MVC** or **SSR:** ASP.NET Core MVC Razor server-side rendered views (`/home`), with lightweight client-side reactivity powered by `petite-vue`.
     *   **API** or **WebAPI:** Controller-based REST Web API endpoints (`/api/...`) with JWT Bearer authentication.
     *   **CMS** or **Piranha**: Piranha CMS v12 content engine serving public blogs (`/blogs`), technical articles (`/articles`), custom blocks (`HeroBlock`), and the admin manager portal (`/manager`).
+
+---
+
+## 🤖 Agentic AI Debugging Tooling (Vue 2 SPA Vite Debugger)
+
+*   **AI Debugging Dev Server:** The Vue 2 SPA (`Dotnet10MvcApi/wwwroot/app`) includes a lightweight, pre-configured Vite dev server (`package.json`, `vite.config.js`) tailored specifically for AI agents (Antigravity & browser subagents) to quietly test, inspect, and debug UI issues.
+    *   **Port & Proxy Setup:** Runs on `http://localhost:5173`. API calls to `/api` are automatically proxied to the ASP.NET Core backend process at `http://localhost:5000`.
+    *   **Strict No-Build Rule:** Vite is **strictly a dev-time debugger for AI agents**. Never run `npm run build` or generate static bundle outputs. Production runtime deployment remains 100% native ES modules served directly by ASP.NET Core from `wwwroot/app`.
+    *   **Clean Workspace Rule:** Node dependencies (`node_modules`) must remain strictly `.gitignore`d or installed globally/outside the project workspace to prevent repository bloat.
 
 ---
 
