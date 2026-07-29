@@ -6,15 +6,22 @@ These instructions govern all future modifications, tests, and task executions p
 
 ## 💻 Environment & Run Requirements
 
+*   **Development Environment Configuration:**
+    *   **Rule:** Always silently ensure `ASPNETCORE_ENVIRONMENT` is set to `Development` prior to running or debugging the application:
+        ```powershell
+        $env:ASPNETCORE_ENVIRONMENT="Development"
+        dotnet run --project Dotnet10MvcApi --arch x64
+        ```
+    *   **Rationale:** Running under `Development` ensures `appsettings.Development.json` is loaded, providing development JWT secret keys, fallback DevUser accounts (`devadmin`/`admin123`), and enabling Piranha CMS auto-seeding without prompting the user.
 *   **x64 Emulation Constraint:** This application runs on Windows ARM64 but connects to an MS Access database via OLE DB drivers, which are exclusively compiled for x64/x86 architectures.
     *   **Rule:** Always run, debug, or build the project using the x64 architecture flag:
         ```powershell
         dotnet run --arch x64
         ```
     *   **Failure Mode:** Running without `--arch x64` results in `assembly not found` or `provider not registered` exceptions during database connection handshakes.
-*   **Debug & Helper Script (`run-debug.bat`):** The project includes `Dotnet10MvcApi/run-debug.bat` to launch the application under the correct architecture:
+*   **Debug & Helper Script (`run-debug.bat`):** The project includes `Dotnet10MvcApi/run-debug.bat` to silently launch the application under Development mode with correct architecture:
     *   **Standard Run:** `.\Dotnet10MvcApi\run-debug.bat`
-    *   **Agent Run (Low Verbosity):** `.\Dotnet10MvcApi\run-debug.bat --agent` (or `/agent`), which executes `dotnet run --project . --arch x64 --verbosity quiet`.
+    *   **Agent Run (Low Verbosity):** `.\Dotnet10MvcApi\run-debug.bat --agent` (or `/agent`), which automatically sets `ASPNETCORE_ENVIRONMENT=Development` and executes `dotnet run --project . --arch x64 --verbosity quiet`.
 
 ---
 

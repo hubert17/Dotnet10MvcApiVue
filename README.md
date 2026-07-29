@@ -60,17 +60,32 @@ ASP.NET Core .NET 10 Monolith ────┼── GET /blazor ─────�
 
 ---
 
-## 🛠️ Windows-on-ARM64 & x64 Run Requirements
+## 🚀 Getting Up & Running
 
-Because the application connects to an MS Access database via OLE DB drivers (`Microsoft.ACE.OLEDB`), which are compiled exclusively for x86/x64 architectures:
+### 1. Environment & Architecture Constraints
+
+To ensure configuration files (`appsettings.Development.json`), default development credentials, and MS Access database OLE DB drivers load properly, set the environment to **Development** and run under **x64**:
+
+* **PowerShell**:
+  ```powershell
+  $env:ASPNETCORE_ENVIRONMENT="Development"
+  dotnet run --project Dotnet10MvcApi --arch x64
+  ```
+* **Command Prompt (CMD)**:
+  ```cmd
+  set ASPNETCORE_ENVIRONMENT=Development
+  dotnet run --project Dotnet10MvcApi --arch x64
+  ```
 
 > [!IMPORTANT]
-> **x64 Emulation Constraint:** Always build, run, or debug the project specifying the `--arch x64` flag:
-> ```powershell
-> dotnet run --project Dotnet10MvcApi --arch x64
-> ```
+> **x64 Emulation Constraint:** The MS Access Jet database engine requires 64-bit OLE DB drivers (`Microsoft.ACE.OLEDB`). Always specify `--arch x64` when running or building.
 
-### Launcher Helper Script (`run-debug.bat`)
+---
+
+### 2. One-Click Launcher Script (`run-debug.bat`)
+
+The repository includes a helper script `Dotnet10MvcApi/run-debug.bat` that automatically configures `ASPNETCORE_ENVIRONMENT=Development` and launches under `--arch x64`:
+
 *   **Standard Interactive Run:**
     ```powershell
     .\Dotnet10MvcApi\run-debug.bat
@@ -79,6 +94,29 @@ Because the application connects to an MS Access database via OLE DB drivers (`M
     ```powershell
     .\Dotnet10MvcApi\run-debug.bat --agent
     ```
+
+---
+
+### 3. Application Endpoints & Access Guide
+
+Once the application starts, access the 6 web application paradigms at the following URLs:
+
+| Application Paradigm | Route | Description / Access Credentials |
+| :--- | :--- | :--- |
+| **Static Glassmorphic Landing** | `https://localhost:7031/` | Static Web Root landing page (`wwwroot/index.html`). |
+| **Vue 2.x SPA (`/app`)** | `https://localhost:7031/app` | Zero-build, native ES module Single Page Application. |
+| **Razor MVC (`/home`)** | `https://localhost:7031/home` | Server-rendered Razor views with `petite-vue` reactivity. |
+| **Blazor Server (`/blazor`)** | `https://localhost:7031/blazor` | Interactive Blazor Server with MudBlazor components. |
+| **Piranha CMS Public** | `https://localhost:7031/blogs` | Editorial blog posts & technical articles (`/articles`). |
+| **Piranha CMS Manager** | `https://localhost:7031/manager` | Admin management portal (**Login:** `admin` / `admin`). |
+| **REST Web API Scalar Docs** | `https://localhost:7031/scalar/v1` | Interactive OpenAPI Scalar playground & `/swagger` redirect. |
+
+#### Default Development Credentials
+* **Database / MVC / API User Accounts**:
+  * Administrator: `devadmin` / `admin123`
+  * Standard User: `devuser` / `user123`
+* **Piranha CMS Admin**:
+  * Admin Portal (`/manager`): `admin` / `admin`
 
 ---
 
