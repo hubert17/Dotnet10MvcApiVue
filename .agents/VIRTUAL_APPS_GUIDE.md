@@ -2,6 +2,9 @@
 
 ## 📌 Executive Summary
 
+> [!NOTE]
+> **Optional / Architectural Reference Only:** Following this virtual isolation pattern is **not required or necessary** for standard features or routine development. It is an architectural reference to keep in mind only when intentionally adding multiple distinct sub-applications—especially when scaling multiple apps within the same paradigm (e.g., adding a 2nd/3rd Vue SPA in `wwwroot/app2`, creating separate virtual MVC portals, or hosting multiple Blazor apps).
+
 This architecture guide details the **Virtual/Fake-Isolated Multiple App Pattern** within a unified ASP.NET Core monolith. 
 
 Instead of creating separate `.exe` server processes, complex ASP.NET Core Areas, or microservices, this pattern achieves full visual, layout, and routing isolation for multiple sub-applications ("virtual apps") using clean folder conventions and dedicated layout shells.
