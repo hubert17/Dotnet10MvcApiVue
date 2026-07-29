@@ -1,4 +1,4 @@
-# Workspace Rules - SharpDevelopMVC Modernization
+# Workspace Rules - Dotnet10 Multi-Paradigm Monolith
 
 These instructions govern all future modifications, tests, and task executions performed by AI agents in this repository.
 
