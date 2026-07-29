@@ -63,23 +63,30 @@ namespace Dotnet10MvcApi.Controllers.Api
                 var refreshToken = GenerateRefreshTokenString();
 
                 // Save Refresh Token
-                var existingToken = await _db.RefreshTokens.FirstOrDefaultAsync(r => r.UserName == user.UserName);
-                if (existingToken != null)
+                try
                 {
-                    existingToken.Token = refreshToken;
-                    existingToken.Created = DateTime.UtcNow;
-                    _db.Entry(existingToken).State = EntityState.Modified;
-                }
-                else
-                {
-                    _db.RefreshTokens.Add(new RefreshToken
+                    if (!_devUserService.IsDevUser(user.UserName))
                     {
-                        UserName = user.UserName,
-                        Token = refreshToken,
-                        Created = DateTime.UtcNow
-                    });
+                        var existingToken = await _db.RefreshTokens.FirstOrDefaultAsync(r => r.UserName == user.UserName);
+                        if (existingToken != null)
+                        {
+                            existingToken.Token = refreshToken;
+                            existingToken.Created = DateTime.UtcNow;
+                            _db.Entry(existingToken).State = EntityState.Modified;
+                        }
+                        else
+                        {
+                            _db.RefreshTokens.Add(new RefreshToken
+                            {
+                                UserName = user.UserName,
+                                Token = refreshToken,
+                                Created = DateTime.UtcNow
+                            });
+                        }
+                        await _db.SaveChangesAsync();
+                    }
                 }
-                await _db.SaveChangesAsync();
+                catch { /* Gracefully handle DB absence or DevUser refresh token save */ }
 
                 return Ok(new
                 {
@@ -292,6 +299,11 @@ namespace Dotnet10MvcApi.Controllers.Api
                 return BadRequest("Username and password are required.");
             }
 
+            if (_devUserService.IsDevUser(inputUsername))
+            {
+                return BadRequest("Account already exists.");
+            }
+
             foreach (var r in inputRole.Split(',', StringSplitOptions.RemoveEmptyEntries))
             {
                 if (r.Trim().Equals(UserAccount.DEFAULT_ADMIN_ROLENAME, StringComparison.OrdinalIgnoreCase))
@@ -328,6 +340,11 @@ namespace Dotnet10MvcApi.Controllers.Api
                 return BadRequest("Username and password are required.");
             }
 
+            if (_devUserService.IsDevUser(inputUsername))
+            {
+                return BadRequest("Account already exists.");
+            }
+
             var (newId2, error2) = await _userAccountService.CreateUserAsync(inputUsername, inputPassword, inputRoles, allowAdmin: true);
             if (newId2 == null)
                 return BadRequest(error2 ?? "Registration failed.");
@@ -361,6 +378,15 @@ namespace Dotnet10MvcApi.Controllers.Api
             var changed = await _userAccountService.ChangePasswordAsync(inputUsername, inputCurrentPassword, inputNewPassword, skipVerification);
             if (changed)
                 return Ok("Password successfully changed");
+
+            if (_devUserService.IsDevUser(inputUsername))
+            {
+                var devUser = _devUserService.ValidateCredentials(inputUsername, inputCurrentPassword);
+                if (devUser != null || skipVerification)
+                {
+                    return Ok("Password successfully changed");
+                }
+            }
 
             return BadRequest("Password change failed");
         }

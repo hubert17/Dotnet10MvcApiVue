@@ -6,7 +6,7 @@ const store = new Vuex.Store({
       name: "GabsVue",
       themeColor: localStorage.getItem('theme_color') || "blue-grey", // https://vuetifyjs.com/en/styles/colors/#material-colors
       baseUrl: "",
-      apiBaseUrl: "https://api45gabs.azurewebsites.net",
+      apiBaseUrl: "",
       imgBaseUrl: "",
       storageName: 'hellovuegabs',
       clientId: '951799207669-5nv7cv480db7drqavq7irtcqkcna6flh.apps.googleusercontent.com', // https://developers.google.com/identity/sign-in/web/sign-in

@@ -143,6 +143,9 @@ namespace Dotnet10MvcApi.Services
 
             try
             {
+                if (_devUserService.IsDevUser(userName))
+                    return (null, "Account already exists.");
+
                 var exists = await _db.Users.AnyAsync(x => x.UserName == userName);
                 if (exists) return (null, "Account already exists.");
 
