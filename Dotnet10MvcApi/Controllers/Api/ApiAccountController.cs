@@ -223,14 +223,10 @@ namespace Dotnet10MvcApi.Controllers.Api
 
         // POST /TOKENLOGOUT
         // POST & GET /api/account/logout
-        // POST & GET /api/account/logoff
-        // POST & GET /api/account/signout
         [HttpPost]
         [HttpGet]
         [Route("TOKENLOGOUT")]
         [Route("api/account/logout")]
-        [Route("api/account/logoff")]
-        [Route("api/account/signout")]
         public async Task<IActionResult> SignOutToken(
             [FromQuery] string? token,
             [FromForm] string? formToken,

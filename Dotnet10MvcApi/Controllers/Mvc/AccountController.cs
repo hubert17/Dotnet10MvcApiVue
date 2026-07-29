@@ -62,7 +62,7 @@ namespace Dotnet10MvcApi.Controllers.Mvc
                     authProperties);
 
                 if (cleanUsername == UserAccount.DEFAULT_ADMIN_LOGIN && password == UserAccount.DEFAULT_ADMIN_LOGIN)
-                    return RedirectToAction("ChangePassword");
+                    return RedirectToAction("ChangePassword", new { ReturnUrl = returnUrl });
 
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     return Redirect(returnUrl);
@@ -109,32 +109,43 @@ namespace Dotnet10MvcApi.Controllers.Mvc
         [HttpPost("/manager/login/logout")]
         [HttpGet("/Account/Logout")]
         [HttpPost("/Account/Logout")]
-        [HttpGet("/Account/Logoff")]
-        [HttpPost("/Account/Logoff")]
         [HttpGet("/logout")]
         [HttpPost("/logout")]
         [AllowAnonymous]
-        public async Task<IActionResult> Logoff()
+        public async Task<IActionResult> Logoff(string? returnUrl = null)
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            if (string.IsNullOrEmpty(returnUrl) && Request.Path.StartsWithSegments("/manager"))
+            {
+                returnUrl = "/manager";
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return RedirectToAction("Login", "Account", new { ReturnUrl = returnUrl });
+            }
             return RedirectToAction("Login", "Account");
         }
 
         [Authorize]
-        public IActionResult ChangePassword()
+        public IActionResult ChangePassword(string? returnUrl = null)
         {
+            ViewBag.ReturnUrl = returnUrl;
             return View();
         }
 
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword)
+        public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string? returnUrl = null)
         {
+            ViewBag.ReturnUrl = returnUrl;
+
             if (string.IsNullOrWhiteSpace(newPassword))
             {
                 TempData["alertbox"] = "New password cannot be empty.";
-                return RedirectToAction("ChangePassword");
+                return RedirectToAction("ChangePassword", new { ReturnUrl = returnUrl });
             }
 
             var userName = User.Identity?.Name;
@@ -143,11 +154,11 @@ namespace Dotnet10MvcApi.Controllers.Mvc
             if (changed)
             {
                 TempData["alertbox"] = "Password changed successfully.";
-                return RedirectToAction("Logoff");
+                return RedirectToAction("Logoff", new { ReturnUrl = returnUrl });
             }
 
             TempData["alertbox"] = "Failed to change password. Verification failed.";
-            return RedirectToAction("ChangePassword");
+            return RedirectToAction("ChangePassword", new { ReturnUrl = returnUrl });
         }
 
         [AllowAnonymous]

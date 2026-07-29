@@ -98,8 +98,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 // 3. Register standard services and native OpenAPI
-builder.Services.AddControllersWithViews()
-    .AddNewtonsoftJson();
+builder.Services.AddControllersWithViews();
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-XSRF-TOKEN";
@@ -300,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var setupLogout = function() {
         document.querySelectorAll('.nav-item.nav-header a, a.navbar-text').forEach(function(el) {
             if (el.textContent && el.textContent.trim().toLowerCase().includes('logout')) {
-                el.setAttribute('href', '/manager/logout');
+                el.setAttribute('href', '/manager/logout?returnUrl=/manager');
                 el.style.cursor = 'pointer';
             }
         });
@@ -311,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var target = e.target.closest('a');
         if (target && target.textContent && target.textContent.trim().toLowerCase().includes('logout')) {
             e.preventDefault();
-            window.location.href = '/manager/logout';
+            window.location.href = '/manager/logout?returnUrl=/manager';
         }
     });
 });
