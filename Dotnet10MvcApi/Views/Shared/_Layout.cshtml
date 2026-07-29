@@ -42,12 +42,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/">Home</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/blogs">Blogs</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/articles">Articles</a>
-                    </li>
                     @if (IsSectionDefined("DynamicNavMenu"))
                     {
                         @RenderSection("DynamicNavMenu")
@@ -65,6 +59,10 @@
                                 Other Pages
                             </a>
                             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownBlog">
+                                <a class="dropdown-item" href="/blogs"><i class="fas fa-blog mr-2 text-primary"></i>Blogs</a>
+                                <a class="dropdown-item" href="/articles"><i class="fas fa-newspaper mr-2 text-info"></i>Articles</a>
+                                <a class="dropdown-item" href="/Home/Chat"><i class="far fa-comments mr-2 text-success"></i>Chat (SignalR)</a>
+                                <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="#">Other Page 1</a>
                                 <a class="dropdown-item" href="/Home/ForAuthUser">Other Page 2</a>
                                 <a class="dropdown-item" href="/Home/ForRoleUser">Other Page 3</a>

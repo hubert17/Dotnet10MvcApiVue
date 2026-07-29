@@ -58,6 +58,14 @@ ASP.NET Core .NET 10 Monolith ────┼── GET /blazor ─────�
 *   **Scalar OpenAPI Playground:** Visual API playground served at `/scalar/v1` (with `/swagger` redirected automatically).
 *   **CDN-First Delivery:** Front-end libraries (Bootstrap 4, Font Awesome, MudBlazor, Petite-Vue, Vue 2, Vuetify) are served directly via **jsDelivr CDN**.
 
+### 5. Multi-Paradigm Real-Time SignalR Messaging (`/chathub`)
+*   **Shared Real-Time Infrastructure:** Central ASP.NET Core SignalR `ChatHub` at `/chathub` defined in `Services/Notifications/ChatHub.cs`.
+*   **Cross-Paradigm Synchronization:** Demonstrates real-time direct messaging across 3 frontend paradigms simultaneously:
+    *   **Razor MVC (`/home/chat`)**: Instagram/X DM-style UI built with HTML5 + Bootstrap 4, powered by `petite-vue` reactivity and `@microsoft/signalr` JS.
+    *   **Vue 2.x SPA (`/app/#/chat`)**: Vuetify-based DM interface in `chat.vue.js` using `@microsoft/signalr` JS.
+    *   **Blazor Server (`/blazor/chat`)**: MudBlazor interactive component in `Chat.razor` using C# `Microsoft.AspNetCore.SignalR.Client` `HubConnection`.
+*   **In-Memory Live Transmitting:** Demonstrates high-speed WebSocket broadcasting without database locking or mandatory user logins.
+
 ---
 
 ## 🚀 Getting Up & Running
@@ -105,8 +113,11 @@ Once the application starts, access the 6 web application paradigms at the follo
 | :--- | :--- | :--- |
 | **Static Glassmorphic Landing** | `https://localhost:7031/` | Static Web Root landing page (`wwwroot/index.html`). |
 | **Vue 2.x SPA (`/app`)** | `https://localhost:7031/app` | Zero-build, native ES module Single Page Application. |
+| **Vue 2.x Real-Time Chat** | `https://localhost:7031/app/#/chat` | Real-Time DM interface in Vue 2 SPA. |
 | **Razor MVC (`/home`)** | `https://localhost:7031/home` | Server-rendered Razor views with `petite-vue` reactivity. |
+| **Razor MVC Real-Time Chat** | `https://localhost:7031/home/chat` | Instagram DM-style real-time chat with `petite-vue` + SignalR. |
 | **Blazor Server (`/blazor`)** | `https://localhost:7031/blazor` | Interactive Blazor Server with MudBlazor components. |
+| **Blazor Real-Time Chat** | `https://localhost:7031/blazor/chat` | MudBlazor SignalR DM component. |
 | **Piranha CMS Public** | `https://localhost:7031/blogs` | Editorial blog posts & technical articles (`/articles`). |
 | **Piranha CMS Manager** | `https://localhost:7031/manager` | Admin management portal (**Login:** `admin` / `admin`). |
 | **REST Web API Scalar Docs** | `https://localhost:7031/scalar/v1` | Interactive OpenAPI Scalar playground & `/swagger` redirect. |
@@ -132,7 +143,7 @@ Dotnet10MvcApiVue/
 │   ├── Blazor/                          # Blazor Server Architecture
 │   │   ├── Components/                  # Shared Blazor Components & Demos
 │   │   ├── Layout/                      # MainLayout & NavMenu
-│   │   ├── Pages/                       # Blazor Pages (Home, Auth, Weather, Counter, Products)
+│   │   ├── Pages/                       # Blazor Pages (Home, Auth, Weather, Counter, Products, Chat)
 │   │   │   └── Account/                 # Login, Register, Logout, ChangePassword (Static SSR)
 │   │   ├── States/                      # BlazorState State Containers
 │   │   ├── App.razor                    # Root Component & Static SSR Router
@@ -146,7 +157,7 @@ Dotnet10MvcApiVue/
 │   │   └── Mvc/                         # Server-Rendered MVC Controllers (Cookie Auth)
 │   │       ├── AccountController.cs     # Razor Login, Register, Profile
 │   │       ├── CrudsampleController.cs  # Product CRUD Portal
-│   │       └── HomeController.cs        # MVC Home Portal
+│   │       └── HomeController.cs        # MVC Home Portal (Index, About, Chat)
 │   ├── Data/
 │   │   └── ApplicationDbContext.cs      # EF Core Access DB Context
 │   ├── Helpers/
@@ -161,10 +172,17 @@ Dotnet10MvcApiVue/
 │   │   │   └── ServerCookieAuthService.cs              # SignalR Circuit Auth Preserver
 │   │   ├── Cms/
 │   │   │   └── CmsContentSeeder.cs      # Initial Piranha CMS Seeder
+│   │   ├── Notifications/
+│   │   │   ├── ChatHub.cs               # Cross-Paradigm SignalR Chat Hub (/chathub)
+│   │   │   ├── NotificationHub.cs       # SignalR Notification Hub (/notificationhub)
+│   │   │   └── NotificationService.cs   # Shared Notification Service
 │   │   └── TokenManager.cs              # JWT Security Service
 │   ├── Views/                           # MVC & Piranha CMS Razor View Templates
+│   │   └── Home/
+│   │       └── Chat.cshtml              # Petite-Vue + SignalR MVC Chat View
 │   ├── wwwroot/                         # Public Static Web Root
 │   │   ├── app/                         # Vue 2.x SPA (Zero-Build ES Modules)
+│   │   │   └── src/pages/chat.vue.js   # Vuetify SignalR SPA Chat Page
 │   │   ├── js/                          # Custom JS Utilities (geo.js, scroll.js)
 │   │   └── index.html                   # Multi-Paradigm Glassmorphic Landing Portal
 │   ├── Program.cs                       # Middleware Pipeline & Service Registration

@@ -1,0 +1,251 @@
+@page "/chat"
+@using Microsoft.AspNetCore.SignalR.Client
+@using Dotnet10MvcApi.Services.Notifications
+@inject NavigationManager NavManager
+@implements IAsyncDisposable
+
+<PageTitle>Direct Messages — Real-Time Chat (Blazor Server)</PageTitle>
+
+@* Instagram / X DM Style Real-Time Chat powered by MudBlazor & SignalR *@
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
+    <div class="d-flex align-center justify-space-between mb-4">
+        <div>
+            <MudText Typo="Typo.h5" Color="Color.Primary" Class="fw-bold">
+                <MudIcon Icon="@Icons.Material.Filled.Forum" Class="mr-2" /> Direct Messages (Blazor Server)
+            </MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Interactive MudBlazor component connected to real-time SignalR circuit
+            </MudText>
+        </div>
+        <div>
+            @if (_isConnected)
+            {
+                <MudChip T="string" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">
+                    Live Connected
+                </MudChip>
+            }
+            else
+            {
+                <MudChip T="string" Color="Color.Warning" Variant="Variant.Filled" Size="Size.Small" Icon="@Icons.Material.Filled.Sync">
+                    Connecting...
+                </MudChip>
+            }
+        </div>
+    </div>
+
+    <MudPaper Elevation="4" Class="rounded-lg overflow-hidden" Style="height: 620px;">
+        <MudGrid Spacing="0" Style="height: 100%;">
+            
+            @* Left Sidebar: Nickname Handle & Channels *@
+            <MudItem xs="12" sm="4" md="3" Class="mud-theme-dark-lighten d-flex flex-column h-100 border-r">
+                <div class="pa-4 bg-surface border-b">
+                    <MudTextField @bind-Value="_myNickname"
+                                  Label="Your Handle"
+                                  Adornment="Adornment.Start"
+                                  AdornmentText="@("@")"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Class="fw-bold" />
+                </div>
+
+                <div class="px-4 py-2 bg-light">
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">Direct Channels</MudText>
+                </div>
+
+                <MudList T="string" Class="flex-grow-1 overflow-y-auto pa-0">
+                    <MudListItem T="string" OnClick="@(() => SelectRecipient("Everyone"))" Class="@(_activeRecipient == "Everyone" ? "mud-chip-color-primary" : "")">
+                        <AvatarContent>
+                            <MudAvatar Color="Color.Primary">
+                                <MudIcon Icon="@Icons.Material.Filled.Public" />
+                            </MudAvatar>
+                        </AvatarContent>
+                        <ChildContent>
+                            <MudText Typo="Typo.subtitle2" Class="fw-bold"># Everyone</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Global public channel</MudText>
+                        </ChildContent>
+                    </MudListItem>
+
+                    <MudDivider />
+
+                    @foreach (var user in _suggestedContacts)
+                    {
+                        var u = user;
+                        <MudListItem T="string" OnClick="@(() => SelectRecipient(u))">
+                            <AvatarContent>
+                                <MudAvatar Color="Color.Secondary">
+                                    @u.Substring(0, Math.Min(2, u.Length)).ToUpper()
+                                </MudAvatar>
+                            </AvatarContent>
+                            <ChildContent>
+                                <MudText Typo="Typo.subtitle2" Class="fw-bold">@@@u</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Direct message</MudText>
+                            </ChildContent>
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudItem>
+
+            @* Right Main Pane: Thread & Input *@
+            <MudItem xs="12" sm="8" md="9" Class="d-flex flex-column h-100 bg-surface">
+                
+                @* Header bar *@
+                <div class="pa-3 border-b d-flex align-center justify-space-between">
+                    <div class="d-flex align-center">
+                        <MudAvatar Color="Color.Primary" Class="mr-3">
+                            @(_activeRecipient == "Everyone" ? "🌎" : _activeRecipient.Substring(0, Math.Min(2, _activeRecipient.Length)).ToUpper())
+                        </MudAvatar>
+                        <div>
+                            <MudText Typo="Typo.subtitle1" Class="fw-bold">
+                                @(_activeRecipient == "Everyone" ? "Global Channel (#Everyone)" : $"@{_activeRecipient}")
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Success">
+                                <MudIcon Icon="@Icons.Material.Filled.FiberManualRecord" Size="Size.Small" Class="mr-1" /> Active SignalR Hub Connection
+                            </MudText>
+                        </div>
+                    </div>
+
+                    <MudTooltip Text="Clear messages">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Delete" Color="Color.Default" OnClick="@ClearThread" Size="Size.Small" />
+                    </MudTooltip>
+                </div>
+
+                @* Messages stream *@
+                <div class="flex-grow-1 pa-4 overflow-y-auto" style="background-color: var(--mud-palette-background-grey);">
+                    @if (!FilteredMessages.Any())
+                    {
+                        <div class="d-flex flex-column align-center justify-center h-100 mud-text-secondary">
+                            <MudIcon Icon="@Icons.Material.Outlined.QuestionAnswer" Size="Size.Large" Class="mb-2" />
+                            <MudText Typo="Typo.h6">No messages yet</MudText>
+                            <MudText Typo="Typo.caption">Send a message to @_activeRecipient to get started!</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var msg in FilteredMessages)
+                        {
+                            var isMe = msg.Sender.Equals(_myNickname, StringComparison.OrdinalIgnoreCase);
+                            <div class="d-flex flex-column mb-3 @(isMe ? "align-end" : "align-start")">
+                                <MudText Typo="Typo.caption" Class="px-1 mb-1">
+                                    <span class="@(isMe ? "mud-text-primary fw-bold" : "fw-bold")">
+                                        @(isMe ? "You" : $"@{msg.Sender}")
+                                    </span> &bull; @msg.Timestamp.ToString("hh:mm tt")
+                                </MudText>
+
+                                <MudPaper Elevation="1" Class="@($"pa-3 max-w-75 rounded-lg {(isMe ? "mud-theme-primary white-text" : "bg-surface")}")" Style="max-width: 75%; word-break: break-word;">
+                                    @msg.Message
+                                </MudPaper>
+                            </div>
+                        }
+                    }
+                </div>
+
+                @* Send bar *@
+                <div class="pa-3 border-t bg-surface">
+                    <div class="d-flex align-center">
+                        <MudTextField @bind-Value="_newMessage"
+                                      Placeholder="Type a message..."
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Disabled="@(!_isConnected)"
+                                      OnKeyDown="@HandleKeyDown"
+                                      Class="flex-grow-1 mr-2" />
+
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Send"
+                                   Disabled="@(!_isConnected || string.IsNullOrWhiteSpace(_newMessage))"
+                                   OnClick="SendMessageAsync">
+                            Send
+                        </MudButton>
+                    </div>
+                </div>
+
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _myNickname = "BlazorUser_" + Random.Shared.Next(100, 999);
+    private string _activeRecipient = "Everyone";
+    private string _newMessage = string.Empty;
+    private List<string> _suggestedContacts = new() { "DevUser", "Alex", "Jordan", "Support" };
+    private List<ChatMessageDto> _messages = new();
+    private HubConnection? _hubConnection;
+    private bool _isConnected => _hubConnection?.State == HubConnectionState.Connected;
+
+    private IEnumerable<ChatMessageDto> FilteredMessages => _messages.Where(m =>
+        _activeRecipient == "Everyone" ||
+        m.Recipient == "Everyone" ||
+        m.Recipient.Equals(_myNickname, StringComparison.OrdinalIgnoreCase) ||
+        m.Sender.Equals(_myNickname, StringComparison.OrdinalIgnoreCase) ||
+        m.Sender.Equals(_activeRecipient, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hubUrl = NavManager.ToAbsoluteUri("/chathub");
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(hubUrl)
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hubConnection.On<ChatMessageDto>("ReceiveChatMessage", (dto) =>
+        {
+            _messages.Add(dto);
+            InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            await _hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Blazor SignalR Chat connection error: {ex.Message}");
+        }
+    }
+
+    private void SelectRecipient(string recipient)
+    {
+        _activeRecipient = recipient;
+    }
+
+    private void ClearThread()
+    {
+        _messages.Clear();
+    }
+
+    private async Task HandleKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SendMessageAsync();
+        }
+    }
+
+    private async Task SendMessageAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newMessage) || !_isConnected || _hubConnection == null) return;
+
+        var text = _newMessage;
+        _newMessage = string.Empty;
+
+        try
+        {
+            await _hubConnection.SendAsync("SendMessage", _myNickname, _activeRecipient, text);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send message: {ex.Message}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection != null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
+}

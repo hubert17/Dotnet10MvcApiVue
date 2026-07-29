@@ -27,6 +27,12 @@ public class HomeController : Controller
         return View();
     }
 
+    [AllowAnonymous]
+    public IActionResult Chat()
+    {
+        return View();
+    }
+
     public IActionResult Help()
     {
         return View();

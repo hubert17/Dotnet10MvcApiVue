@@ -3,6 +3,7 @@ Vue.use(VueRouter);
 const routes = [
   { title: "Home", icon: "home", path: "/", component: () => import('./pages/home.vue.js') },
   { title: "News", icon: "article", path: "/news", component: () => import('./pages/news.vue.js') },
+  { title: "Chat", icon: "forum", path: "/chat", component: () => import('./pages/chat.vue.js') },
   { title: "Settings", icon: "settings", path: "/settings", component: () => import('./pages/settings.vue.js') },
   { title: "Help", icon: "help_outline", path: "/help", component: () => import('./pages/help.vue.js') },
   { path: "*", redirect: "/" }

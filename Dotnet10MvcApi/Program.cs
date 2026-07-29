@@ -364,6 +364,7 @@ app.MapRazorComponents<Dotnet10MvcApi.Blazor.App>()
     .AddInteractiveServerRenderMode();
 
 app.MapHub<Dotnet10MvcApi.Services.Notifications.NotificationHub>("/notificationhub");
+app.MapHub<Dotnet10MvcApi.Services.Notifications.ChatHub>("/chathub");
 
 app.MapControllerRoute(
     name: "default",

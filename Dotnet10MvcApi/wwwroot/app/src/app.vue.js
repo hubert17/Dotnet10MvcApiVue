@@ -146,11 +146,11 @@ export default {
 
         <v-tooltip bottom>
             <template v-slot:activator="{ on }">
-              <v-btn v-on="on" icon class="hidden-xs-only">
+              <v-btn v-on="on" icon class="hidden-xs-only" @click="gotoRoute('/chat')">
                 <v-icon>mdi-forum</v-icon>
               </v-btn>
             </template>
-            <span>Customer Service</span>
+            <span>Live Chat</span>
           </v-tooltip>
 
           <v-tooltip bottom>
