@@ -10,6 +10,7 @@
 **/[Rr]elease/
 **/x64/
 **/x86/
+_publish/
 
 # Databases, Lock Files & Archives
 *.mdb
