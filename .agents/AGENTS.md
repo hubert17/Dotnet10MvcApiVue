@@ -67,9 +67,9 @@ These instructions govern all future modifications, tests, and task executions p
 * **Markup Style:** Prefer standard HTML5 markup over legacy ASP.NET MVC Razor helpers (e.g., `@Html.BeginForm`, `@Html.TextBoxFor`, `@Html.LabelFor`).
   * **Rule:** Implement views using clean, raw HTML form controls and Bootstrap 4 classes (`<form action="..." method="...">`, `<input id="..." name="..." class="form-control" />`). Use Razor syntax for essential dynamic control flow (loops, conditionals) and model properties rather than HTML helper abstractions.
 
-* **Razor Comments over HTML Comments:** All developer annotations in `.cshtml` view files must use Razor comment syntax, **not** HTML comment syntax.
-  * **Rule:** Use `@* comment text *@` for all comments inside Razor views. Never use `<!-- comment -->` for developer notes or structural annotations in `.cshtml` files.
-  * **Rationale:** HTML comments (`<!-- -->`) are emitted into the HTTP response and are visible to end users via browser DevTools or View Source. Razor comments (`@* *@`) are stripped server-side before the response is sent, keeping the rendered HTML payload clean, secure, and lean.
+* **Razor Comments over HTML Comments:** All developer annotations in `.cshtml` and `.razor` view/component files must use Razor comment syntax, **not** HTML comment syntax.
+  * **Rule:** Use `@* comment text *@` for all comments inside Razor views and components (`.cshtml` and `.razor`). Never use `<!-- comment -->` for developer notes or structural annotations in `.cshtml` or `.razor` files.
+  * **Rationale:** HTML comments (`<!-- -->`) are emitted into the HTTP response payload and are visible to end users via browser DevTools or View Source. Razor comments (`@* *@`) are stripped server-side before the response is sent, keeping rendered HTML payloads clean, secure, and lean.
 
 ---
 
