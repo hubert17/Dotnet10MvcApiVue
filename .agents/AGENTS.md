@@ -109,6 +109,17 @@ These instructions govern all future modifications, tests, and task executions p
     *   **API** or **WebAPI:** Controller-based REST Web API endpoints (`/api/...`) with JWT Bearer authentication.
     *   **CMS** or **Piranha**: Piranha CMS v12 content engine serving public blogs (`/blogs`), technical articles (`/articles`), custom blocks (`HeroBlock`), and the admin manager portal (`/manager`).
 
+*   **Feature Architecture Analysis & Paradigm Selection Rule:**
+    *   Whenever the user / System Architect requests to add or implement a new feature in this multi-paradigm monolith:
+        1. **Analyze Requirements & Recommend Paradigm:** The AI agent must carefully analyze the architectural requirements against the project's paradigms:
+           - **Static Web Root (`/`)**: Static landing pages or marketing content.
+           - **Vue 2 SPA (`/app`)**: Dynamic, zero-build single-page applications for high-concurrency client-side app workflows.
+           - **Razor MVC (`/home`)**: Server-rendered HTML forms, traditional page-based workflows, or admin views with `petite-vue` reactivity.
+           - **REST Web APIs (`/api/...`)**: Controller-based JSON endpoints with JWT Bearer authentication.
+           - **Piranha CMS (`/blogs`, `/articles`, `/manager`)**: Editorial blog posts, articles, CMS block content, and admin management.
+        2. **Mindful Architectural Discussion:** Discuss the proposed paradigm recommendation mindfully with the System Architect before proceeding with code implementation.
+        3. **Autonomous AI Decision-Making:** If the Architect is unsure, defers the choice, or has limited knowledge of the project's paradigms, the AI agent must make an informed, appropriate architectural decision autonomously and explain the rationale clearly before building.
+
 ---
 
 ## 🤖 Agentic AI Debugging Tooling (Vue 2 SPA Vite Debugger)
