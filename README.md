@@ -124,8 +124,8 @@ Once the application starts, access the 6 web application paradigms at the follo
 
 #### Default Development Credentials
 * **Database / MVC / API User Accounts**:
-  * Administrator: `devadmin` / `admin123`
-  * Standard User: `devuser` / `user123`
+  * Administrator: `admin` / `admin`
+  * Standard User: `user` / `user`
 * **Piranha CMS Admin**:
   * Admin Portal (`/manager`): `admin` / `admin`
 
