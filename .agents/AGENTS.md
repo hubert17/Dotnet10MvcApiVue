@@ -144,4 +144,4 @@ These instructions govern all future modifications, tests, and task executions p
 ### 3. Build & Test Operations (Standardized)
 - **Verbosity Constraints:** For successful/routine runs, use minimal verbosity to keep context clean.
 - **Exception for Failures:** If a build or test fails, use standard or detailed verbosity to ensure the full error messages, stack traces, and compiler warnings are captured for accurate debugging.
-- **NO Package Installations:** Do **NOT** run command execution tools to perform node package installation (`npm install`, `npm i`, `yarn install`, `pnpm install`, etc.). The user manages dependencies manually.
+- **NO Package Installations (Except Vite AI Debugging):** Do **NOT** run command execution tools to perform general node package installations (`npm install`, `npm i`, `yarn install`, `pnpm install`, etc.), as the user manages project dependencies manually. An exception is made strictly for Vite dev dependencies in `wwwroot/app` when required to initialize or run the Agentic AI Dev Debugger.
