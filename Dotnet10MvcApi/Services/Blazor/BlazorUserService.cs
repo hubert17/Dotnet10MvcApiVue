@@ -19,6 +19,9 @@ namespace Dotnet10MvcApi.Services.Blazor
         public UserAccount? Authenticate(string? userName, string? password)
             => _userAccountService.Authenticate(userName, password);
 
+        public Task<UserAccount?> AuthenticateAsync(string? userName, string? password)
+            => _userAccountService.AuthenticateAsync(userName, password);
+
         public Guid? Create(string? userName, string? password, string roles = "")
         {
             var (id, _) = _userAccountService.CreateUserAsync(userName, password, roles).GetAwaiter().GetResult();

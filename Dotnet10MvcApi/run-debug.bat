@@ -10,11 +10,11 @@ set "PROJECT_DIR=%~dp0"
 REM Check for Agent Mode argument
 if "%~1"=="--agent" (
     echo [Agent Mode] Launching application with low verbosity...
-    dotnet run --project "%PROJECT_DIR%." --arch x64 --verbosity quiet
+    dotnet run --project "%PROJECT_DIR%." --verbosity quiet
 ) else if "%~1"=="/agent" (
     echo [Agent Mode] Launching application with low verbosity...
-    dotnet run --project "%PROJECT_DIR%." --arch x64 --verbosity quiet
+    dotnet run --project "%PROJECT_DIR%." --verbosity quiet
 ) else (
-    echo [User Mode] Launching application under x64 emulation...
-    dotnet run --project "%PROJECT_DIR%." --arch x64
+    echo [User Mode] Launching application...
+    dotnet run --project "%PROJECT_DIR%."
 )
