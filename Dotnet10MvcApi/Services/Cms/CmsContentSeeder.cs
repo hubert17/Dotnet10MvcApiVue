@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Dotnet10MvcApi.Models.Cms;
 using Dotnet10MvcApi.Models.Cms.Blocks;
+using Dotnet10MvcApi.Models.Entities;
 using Piranha;
 using Piranha.Models;
 using Piranha.Extend.Blocks;
@@ -79,6 +80,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     post1.Subtitle = "A unified ASP.NET Core monolith hosting Static, Vue SPA, Razor MVC, REST Web APIs, and Piranha CMS.";
                     post1.Excerpt = "Welcome to our platform engineering blog! Discover how ASP.NET Core .NET 10 hosts 4 web application paradigms simultaneously in a single codebase.";
                     post1.AuthorName = "Bernard Gabon";
+                    post1.MetaKeywords = $"createdby:{UserAccount.DEFAULT_ADMIN_LOGIN}";
                     post1.Published = DateTime.Now.AddDays(-2);
 
                     post1.EnableComments = true;
@@ -123,6 +125,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     post2.Subtitle = "Zero-build native ES module integration with Petite-Vue reactivity.";
                     post2.Excerpt = "Learn how to build lightweight Vue 2.x applications directly in ASP.NET Core without Webpack or Node.js build steps.";
                     post2.AuthorName = "Bernard Gabon";
+                    post2.MetaKeywords = $"createdby:{UserAccount.DEFAULT_ADMIN_LOGIN}";
                     post2.Published = DateTime.Now.AddDays(-1);
                     post2.EnableComments = true;
                     post2.RequireModeration.Value = true;
@@ -161,6 +164,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     article1.Subtitle = "Combining Cookie authentication for SSR with JWT Bearer tokens for REST Web APIs.";
                     article1.Excerpt = "An in-depth guide on implementing hybrid cookie and bearer token authentication in ASP.NET Core.";
                     article1.AuthorName = "Bernard Gabon";
+                    article1.MetaKeywords = $"createdby:{UserAccount.DEFAULT_ADMIN_LOGIN}";
                     article1.ReadingTime = "5 mins";
                     article1.Published = DateTime.Now.AddDays(-3);
                     article1.EnableComments = false;
@@ -193,6 +197,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     article2.Subtitle = "EF Core query optimizations, scalar queries, and lightweight CDN asset loading.";
                     article2.Excerpt = "Practical techniques for optimizing web application throughput, query speeds, and front-end asset loading.";
                     article2.AuthorName = "Bernard Gabon";
+                    article2.MetaKeywords = $"createdby:{UserAccount.DEFAULT_ADMIN_LOGIN}";
                     article2.ReadingTime = "7 mins";
                     article2.Published = DateTime.Now.AddDays(-1);
                     article2.EnableComments = false;
@@ -214,6 +219,73 @@ namespace Dotnet10MvcApi.Services.Cms
                     await api.Posts.SaveAsync(article2);
 
                     Console.WriteLine("Seeded initial Piranha CMS Articles successfully.");
+                }
+
+                // 5. Backfill createdby metadata tag on any existing posts if missing
+                var defaultAdminTag = $"createdby:{UserAccount.DEFAULT_ADMIN_LOGIN}";
+                var allBlogPosts = await api.Posts.GetAllAsync<BlogPost>(blogPageId);
+                if (allBlogPosts != null)
+                {
+                    foreach (var p in allBlogPosts)
+                    {
+                        var fullPost = await api.Posts.GetByIdAsync<BlogPost>(p.Id);
+                        if (fullPost != null && (string.IsNullOrWhiteSpace(fullPost.MetaKeywords) || !fullPost.MetaKeywords.Contains("createdby:", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            fullPost.MetaKeywords = string.IsNullOrWhiteSpace(fullPost.MetaKeywords) ? defaultAdminTag : fullPost.MetaKeywords + "," + defaultAdminTag;
+                            await api.Posts.SaveAsync(fullPost);
+                        }
+                    }
+                }
+
+                var allArticles = await api.Posts.GetAllAsync<ArticlePost>(articlePageId);
+                if (allArticles != null)
+                {
+                    foreach (var a in allArticles)
+                    {
+                        var fullArticle = await api.Posts.GetByIdAsync<ArticlePost>(a.Id);
+                        if (fullArticle != null && (string.IsNullOrWhiteSpace(fullArticle.MetaKeywords) || !fullArticle.MetaKeywords.Contains("createdby:", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            fullArticle.MetaKeywords = string.IsNullOrWhiteSpace(fullArticle.MetaKeywords) ? defaultAdminTag : fullArticle.MetaKeywords + "," + defaultAdminTag;
+                            await api.Posts.SaveAsync(fullArticle);
+                        }
+                    }
+                }
+
+                // 6. Clean up any duplicate posts created during testing
+                var freshBlogPosts = await api.Posts.GetAllAsync<BlogPost>(blogPageId);
+                if (freshBlogPosts != null)
+                {
+                    var grouped = freshBlogPosts.GroupBy(p => p.Title?.Trim(), StringComparer.OrdinalIgnoreCase);
+                    foreach (var group in grouped)
+                    {
+                        if (group.Count() > 1)
+                        {
+                            var duplicates = group.OrderBy(p => p.Created).Skip(1).ToList();
+                            foreach (var dup in duplicates)
+                            {
+                                await api.Posts.DeleteAsync(dup.Id);
+                                Console.WriteLine($"Purged duplicate blog post: '{dup.Title}' (ID: {dup.Id})");
+                            }
+                        }
+                    }
+                }
+
+                var freshArticles = await api.Posts.GetAllAsync<ArticlePost>(articlePageId);
+                if (freshArticles != null)
+                {
+                    var grouped = freshArticles.GroupBy(p => p.Title?.Trim(), StringComparer.OrdinalIgnoreCase);
+                    foreach (var group in grouped)
+                    {
+                        if (group.Count() > 1)
+                        {
+                            var duplicates = group.OrderBy(p => p.Created).Skip(1).ToList();
+                            foreach (var dup in duplicates)
+                            {
+                                await api.Posts.DeleteAsync(dup.Id);
+                                Console.WriteLine($"Purged duplicate article post: '{dup.Title}' (ID: {dup.Id})");
+                            }
+                        }
+                    }
                 }
             }
             catch (Exception ex)

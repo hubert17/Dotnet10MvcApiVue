@@ -1,30 +1,16 @@
 #pragma warning disable CA1416
 
-using System;
-using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Dotnet10MvcApi.Data;
-using Dotnet10MvcApi.Helpers;
-using Dotnet10MvcApi.Models;
 using Dotnet10MvcApi.Models.Entities;
 using Dotnet10MvcApi.Services;
 using Dotnet10MvcApi.Blazor;
-using Dotnet10MvcApi.Models.Cms;
 using Dotnet10MvcApi.Services.Cms;
 using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Http;
-using Piranha;
-using Piranha.AttributeBuilder;
-using Piranha.Data.EF.SQLite;
 using Piranha.Manager.Editor;
 using Scalar.AspNetCore;
 using OpenApi = Microsoft.OpenApi;
@@ -85,81 +71,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// 2b. Configure Piranha Manager Authorization Policies for Standardized Roles:
-// Roles: "admin", "CmsEditor", "CmsWriter", "CmsModerator"
-builder.Services.AddAuthorization(options =>
-{
-    foreach (var permission in Piranha.Manager.Permission.All())
-    {
-        options.AddPolicy(permission, policy =>
-        {
-            switch (permission)
-            {
-                // Entry permission into manager portal
-                case Piranha.Manager.Permission.Admin:
-                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsWriter", "writer", "Writer", "CmsModerator", "moderator", "Moderator", "comment moderator");
-                    break;
 
-                // Pages Navigation (All CMS Roles)
-                case Piranha.Manager.Permission.Pages:
-                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsWriter", "writer", "Writer", "CmsModerator", "moderator", "Moderator");
-                    break;
-
-                // Pages View & Edit (CmsWriter, CmsModerator, CmsEditor & Admins)
-                case Piranha.Manager.Permission.PagesEdit:
-                case Piranha.Manager.Permission.PagesSave:
-                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsWriter", "writer", "Writer", "CmsModerator", "moderator", "Moderator");
-                    break;
-
-                // Pages Structure & Publishing (CmsEditor & Admins)
-                case Piranha.Manager.Permission.PagesAdd:
-                case Piranha.Manager.Permission.PagesPublish:
-                case Piranha.Manager.Permission.PagesDelete:
-                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor");
-                    break;
-
-                // Posts Drafting, Editing & Publishing (CmsWriter for own posts, CmsEditor & Admins)
-                case Piranha.Manager.Permission.Posts:
-                case Piranha.Manager.Permission.PostsAdd:
-                case Piranha.Manager.Permission.PostsEdit:
-                case Piranha.Manager.Permission.PostsSave:
-                case Piranha.Manager.Permission.PostsPublish:
-                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsWriter", "writer", "Writer");
-                    break;
-
-                // Posts Deleting (CmsEditor & Admins)
-                case Piranha.Manager.Permission.PostsDelete:
-                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor");
-                    break;
-
-                // Media Assets Management (CmsWriter, CmsModerator, CmsEditor & Admins)
-                case Piranha.Manager.Permission.Media:
-                case Piranha.Manager.Permission.MediaAdd:
-                case Piranha.Manager.Permission.MediaEdit:
-                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsWriter", "writer", "Writer", "CmsModerator", "moderator", "Moderator");
-                    break;
-                case Piranha.Manager.Permission.MediaDelete:
-                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor");
-                    break;
-
-                // Comments Moderation (CmsModerator, CmsEditor & Admins)
-                case Piranha.Manager.Permission.Comments:
-                case Piranha.Manager.Permission.CommentsApprove:
-                case Piranha.Manager.Permission.CommentsDelete:
-                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsModerator", "moderator", "Moderator");
-                    break;
-
-                // System & Site Administration (Admins Only)
-                case Piranha.Manager.Permission.Aliases:
-                case Piranha.Manager.Permission.Sites:
-                case Piranha.Manager.Permission.Modules:
-                default:
-                    policy.RequireRole("admin", "Admin");
-                    break;
-            }
-        });
-    }
-});
 
 // 3. Register standard services and native OpenAPI
 builder.Services.AddControllersWithViews();
@@ -236,20 +148,8 @@ builder.Services.AddScoped<TokenManager>();
 builder.Services.AddScoped<DevUserService>();
 builder.Services.AddScoped<CmsService>();
 
-// Configure Piranha CMS
-builder.Services.AddPiranha(options =>
-{
-    options.AddRazorRuntimeCompilation = true;
-
-    var piranhaDbPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "piranha.db");
-    options.UseEF<SQLiteDb>(db =>
-        db.UseSqlite($"Data Source={piranhaDbPath}"));
-    options.UseManager();
-    options.UseTinyMCE();
-    options.UseMemoryCache();
-    options.UseImageSharp();
-    options.UseFileStorage(basePath: "wwwroot/cms/uploads/", baseUrl: "~/cms/uploads/", naming: Piranha.Local.FileStorageNaming.UniqueFolderNames);
-});
+// Configure Piranha CMS Services
+builder.Services.AddCustomPiranhaCms(builder.Environment);
 
 // Register Blazor Server Components & Services (via BlazorDependencyInjection)
 builder.Services.AddRazorComponents()
@@ -258,23 +158,10 @@ builder.Services.AddRazorComponents()
 builder.Services.AddBlazorCore(builder.Configuration);
 builder.Services.AddSingleton<Microsoft.AspNetCore.Routing.MatcherPolicy, Dotnet10MvcApi.Services.Blazor.BlazorPathBaseEndpointSelectorPolicy>();
 
-// Register the Piranha Manager security bridge (LocalAuth ISecurity)
-// This allows the manager's login/save/publish to delegate to our cookie auth
-builder.Services.AddScoped<Piranha.Manager.LocalAuth.ISecurity, Dotnet10MvcApi.Services.PiranhaManagerSecurity>();
-
 var app = builder.Build();
 
 // Initialize Piranha Content Types
-using (var scope = app.Services.CreateScope())
-{
-    var api = scope.ServiceProvider.GetRequiredService<IApi>();
-    Piranha.App.Init(api);
-    Piranha.App.Blocks.Register<Dotnet10MvcApi.Models.Cms.Blocks.HeroBlock>();
-    Piranha.App.Blocks.Register<Dotnet10MvcApi.Models.Cms.Blocks.YouTubeBlock>();
-    new ContentTypeBuilder(api)
-        .AddAssembly(typeof(Program).Assembly)
-        .Build();
-}
+app.UsePiranhaContentTypes();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -317,169 +204,15 @@ app.MapOpenApi();
 app.MapScalarApiReference();
 
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
-// Security Guard: Allow CmsWriter users to view, edit, and save drafts of others' posts, but restrict PUBLISHING to ONLY their own posts
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path.StartsWithSegments("/manager/api/post/save") &&
-        HttpMethods.IsPost(context.Request.Method) &&
-        context.User.Identity?.IsAuthenticated == true &&
-        (context.User.IsInRole("CmsWriter") || context.User.IsInRole("writer") || context.User.IsInRole("Writer")) &&
-        !context.User.IsInRole(Dotnet10MvcApi.Models.Entities.UserAccount.DEFAULT_ADMIN_ROLENAME) &&
-        !context.User.IsInRole("admin") &&
-        !context.User.IsInRole("Admin") &&
-        !context.User.IsInRole("CmsEditor") &&
-        !context.User.IsInRole("editor") &&
-        !context.User.IsInRole("Editor"))
-    {
-        context.Request.EnableBuffering();
-        using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true);
-        var bodyText = await reader.ReadToEndAsync();
-        context.Request.Body.Position = 0;
-
-        if (!string.IsNullOrWhiteSpace(bodyText))
-        {
-            try
-            {
-                using var doc = System.Text.Json.JsonDocument.Parse(bodyText);
-                var root = doc.RootElement;
-
-                // Check if request attempts a PUBLISH action
-                var isPublishAction = false;
-                if (root.TryGetProperty("action", out var actionProp) &&
-                    string.Equals(actionProp.GetString(), "publish", StringComparison.OrdinalIgnoreCase))
-                {
-                    isPublishAction = true;
-                }
-
-                if (root.TryGetProperty("id", out var idProp) &&
-                    Guid.TryParse(idProp.GetString(), out var postId) &&
-                    postId != Guid.Empty)
-                {
-                    var api = context.RequestServices.GetRequiredService<Piranha.IApi>();
-                    var existingPost = await api.Posts.GetByIdAsync<Piranha.Models.PostInfo>(postId);
-
-                    if (existingPost != null)
-                    {
-                        var currentUsername = context.User.Identity?.Name ?? "";
-                        var metaKeywords = existingPost.MetaKeywords ?? "";
-
-                        if (existingPost.Published == null &&
-                            root.TryGetProperty("published", out var pubProp) &&
-                            !string.IsNullOrWhiteSpace(pubProp.GetString()))
-                        {
-                            isPublishAction = true;
-                        }
-
-                        // Determine if post belongs to current writer
-                        var isOwnPost = true;
-                        if (metaKeywords.Contains("author:", StringComparison.OrdinalIgnoreCase))
-                        {
-                            isOwnPost = metaKeywords.Contains($"author:{currentUsername}", StringComparison.OrdinalIgnoreCase);
-                        }
-
-                        // Block ONLY publish operations on posts authored by others
-                        if (isPublishAction && !isOwnPost)
-                        {
-                            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                            context.Response.ContentType = "application/json";
-                            await context.Response.WriteAsync("{\"status\":{\"type\":\"error\",\"message\":\"CmsWriter users can view, edit, and save drafts of other authors' posts, but are ONLY permitted to publish their own posts.\"}}");
-                            return;
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                // Fallthrough on non-JSON payloads
-            }
-        }
-    }
-
-    await next();
-});
+// Security Guard: Allow CmsWriter users to view, edit, and save drafts of others' posts, but restrict PUBLISHING to ONLY their own posts and PREVENT duplicate creation attempts.
+app.UsePiranhaPostSecurityGuard();
 
 // Ensure Anti-Forgery XSRF-TOKEN cookie & contrast fix CSS are populated on /manager requests
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path.StartsWithSegments("/manager"))
-    {
-        var antiforgery = context.RequestServices.GetRequiredService<IAntiforgery>();
-        var tokens = antiforgery.GetAndStoreTokens(context);
-        if (!string.IsNullOrEmpty(tokens.RequestToken))
-        {
-            context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken, new CookieOptions
-            {
-                HttpOnly = false,
-                SameSite = SameSiteMode.Lax,
-                Secure = context.Request.IsHttps
-            });
-        }
-
-        if (!context.Request.Path.StartsWithSegments("/manager/api") &&
-            !context.Request.Path.StartsWithSegments("/manager/assets"))
-        {
-            var originalBodyStream = context.Response.Body;
-            using var memoryStream = new MemoryStream();
-            context.Response.Body = memoryStream;
-
-            await next();
-
-            if (context.Response.ContentType != null && context.Response.ContentType.Contains("text/html"))
-            {
-                memoryStream.Seek(0, SeekOrigin.Begin);
-                using var reader = new StreamReader(memoryStream, Encoding.UTF8, leaveOpen: true);
-                var html = await reader.ReadToEndAsync();
-
-                const string managerScriptFix = @"<style id='piranha-contrast-fix'>
-.text-light,.text-white,[class*='text-light'],[class*='text-white']{color:#334155!important;}
-.nav-item.nav-header a, a.navbar-text, [href*='logout'] { cursor: pointer !important; }
-</style>
-<script id='piranha-logout-fix'>
-document.addEventListener('DOMContentLoaded', function() {
-    var setupLogout = function() {
-        document.querySelectorAll('.nav-item.nav-header a, a.navbar-text').forEach(function(el) {
-            if (el.textContent && el.textContent.trim().toLowerCase().includes('logout')) {
-                el.setAttribute('href', '/manager/logout?returnUrl=/manager');
-                el.style.cursor = 'pointer';
-            }
-        });
-    };
-    setupLogout();
-    setTimeout(setupLogout, 500);
-    document.addEventListener('click', function(e) {
-        var target = e.target.closest('a');
-        if (target && target.textContent && target.textContent.trim().toLowerCase().includes('logout')) {
-            e.preventDefault();
-            window.location.href = '/manager/logout?returnUrl=/manager';
-        }
-    });
-});
-</script>";
-                if (html.Contains("</head>"))
-                {
-                    html = html.Replace("</head>", $"{managerScriptFix}</head>");
-                }
-
-                var bytes = Encoding.UTF8.GetBytes(html);
-                context.Response.ContentLength = bytes.Length;
-                await originalBodyStream.WriteAsync(bytes, 0, bytes.Length);
-            }
-            else
-            {
-                memoryStream.Seek(0, SeekOrigin.Begin);
-                await memoryStream.CopyToAsync(originalBodyStream);
-            }
-            context.Response.Body = originalBodyStream;
-            return;
-        }
-    }
-    await next();
-});
+app.UsePiranhaManagerAssets();
 
 // Enable Piranha CMS Middleware (bypassed for /blazor requests so Blazor Server endpoints take priority)
 app.UseWhen(ctx => !ctx.Request.PathBase.StartsWithSegments(blazorPrefix) && !ctx.Request.Path.StartsWithSegments(blazorPrefix), piranhaApp =>
