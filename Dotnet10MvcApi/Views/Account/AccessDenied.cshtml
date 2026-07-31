@@ -9,18 +9,18 @@
     </div>
     <div class="card-body p-4 p-md-5 text-center">
         <p class="lead text-secondary mb-3">
-            You do not have administrative permissions to access this area.
+            You do not have administrative or editorial permissions to access this area.
         </p>
         @if (!string.IsNullOrEmpty(ViewBag.ReturnUrl))
         {
             <p class="text-muted mb-4">Target path: <code>@ViewBag.ReturnUrl</code></p>
         }
         <p class="text-muted mb-4">
-            Please log in with an Administrator account (username: <code>admin</code>) to access the Piranha CMS Manager.
+            Please log in with an authorized manager account (<code>admin</code>, <code>CmsEditor</code>, <code>CmsWriter</code>, or <code>CmsModerator</code>) to access the Piranha CMS Manager.
         </p>
         <div class="d-flex justify-content-center">
             <a href="/Account/Login?ReturnUrl=@(System.Web.HttpUtility.UrlEncode(ViewBag.ReturnUrl ?? "/manager"))" class="btn btn-primary px-4 mr-2">
-                <i class="fas fa-sign-in-alt mr-1"></i> Log In as Admin
+                <i class="fas fa-sign-in-alt mr-1"></i> Log In
             </a>
             <a href="/" class="btn btn-outline-secondary px-4">
                 <i class="fas fa-home mr-1"></i> Return Home

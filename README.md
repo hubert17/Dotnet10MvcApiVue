@@ -65,6 +65,15 @@ ASP.NET Core .NET 10 Monolith ────┼── GET /blazor ─────�
     *   **Blazor Server (`/blazor/chat`)**: MudBlazor interactive component in `Chat.razor` using C# `Microsoft.AspNetCore.SignalR.Client` `HubConnection`.
 *   **In-Memory Live Transmitting:** Demonstrates high-speed WebSocket broadcasting without database locking or mandatory user logins.
 
+### 6. MVC-Exclusive User Management Portal (`/Account/Users`)
+*   **Interactive Petite-Vue UI:** Admin-only user management portal (`/Account/Users`) built with HTML5, Bootstrap 4, and `petite-vue` reactivity. Features 1-click role switcher pills, stat cards, instant search/filtering, and modal dialogs for user creation, role editing, and password resets.
+*   **Fine-Grained Role & Piranha CMS Permission Mapping:** Supports `admin`, `CmsEditor`, `CmsWriter`, `CmsModerator`, and `user` roles. Dynamically maps role assignments to fine-grained Piranha CMS permissions (`PagesEdit`, `PostsEdit`, `MediaDelete`, `CommentsApprove`, etc.) via `UserAccountService.AddPiranhaRoleClaims()`.
+*   **Strict Secondary Server Protection:** Enforces secondary server-side security checks on `UserAccountService` and `AccountController` to protect the primary seeded admin (`UserAccount.DEFAULT_ADMIN_LOGIN`):
+    *   **Role Immunitization:** Prevents removing the `admin` role from the primary seeded admin.
+    *   **Permanent Active Status:** Blocks deactivation of the primary admin account.
+    *   **Deletion Protection:** Blocks deletion of the primary admin account.
+    *   **Reserved Username:** Prevents creating new accounts using the reserved default admin username.
+
 ---
 
 ## 🚀 Getting Up & Running
@@ -136,6 +145,7 @@ Once the application starts, access the 6 web application paradigms at the follo
 | **Vue 2.x SPA (`/app`)** | `https://localhost:7031/app` | Zero-build, native ES module Single Page Application. |
 | **Vue 2.x Real-Time Chat** | `https://localhost:7031/app/#/chat` | Real-Time DM interface in Vue 2 SPA. |
 | **Razor MVC (`/home`)** | `https://localhost:7031/home` | Server-rendered Razor views with `petite-vue` reactivity. |
+| **MVC User Management** | `https://localhost:7031/Account/Users` | User administration portal (MVC exclusive, Admin only). |
 | **Razor MVC Real-Time Chat** | `https://localhost:7031/home/chat` | Instagram DM-style real-time chat with `petite-vue` + SignalR. |
 | **Blazor Server (`/blazor`)** | `https://localhost:7031/blazor` | Interactive Blazor Server with MudBlazor components. |
 | **Blazor Real-Time Chat** | `https://localhost:7031/blazor/chat` | MudBlazor SignalR DM component. |

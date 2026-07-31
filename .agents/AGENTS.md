@@ -51,6 +51,18 @@ These instructions govern all future modifications, tests, and task executions p
         2. Ensure `builder.Services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN")` is set without overriding `options.Cookie.Name` (keeping ASP.NET Core's internal `CookieToken` separate).
         3. Ensure the middleware appends `tokens.RequestToken` into a non-`HttpOnly` cookie named `"XSRF-TOKEN"` on `/manager` GET requests so Piranha Manager's Vue frontend JS populates `x-xsrf-token` headers on `POST /manager/api/post/save` requests.
 
+*   **MVC-Exclusive User Management Portal (`/Account/Users`):**
+    *   **Access & Authorization:** Exclusive to ASP.NET Core Razor MVC (`AccountController.cs` + `Views/Account/Users.cshtml`). All endpoints are protected with `[Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]`.
+    *   **Standard Constants Rule:** Always use `UserAccount` entity constants rather than hardcoded string literals:
+        *   `UserAccount.DEFAULT_ADMIN_LOGIN` (`"admin"`): Reserved login name for the primary system administrator.
+        *   `UserAccount.DEFAULT_ADMIN_ROLENAME` (`"admin"`): Primary administrator role name.
+    *   **Available Role Set & Piranha CMS Permission Mapping:** Supported roles include `admin`, `CmsEditor`, `CmsWriter`, `CmsModerator`, and `user`. In `UserAccountService.AddPiranhaRoleClaims()`, role assignments automatically inject matching fine-grained Piranha Manager security claims (`Piranha.Manager.Permission.All()`, `PagesEdit`, `PostsEdit`, `MediaDelete`, `CommentsApprove`, etc.) into `ClaimsPrincipal`.
+    *   **Secondary Server-Side Protection Safeguards:**
+        1. **Immutable Admin Roles:** The primary `UserAccount.DEFAULT_ADMIN_LOGIN` account cannot have its `UserAccount.DEFAULT_ADMIN_ROLENAME` stripped or modified.
+        2. **Permanent Active Status:** The primary admin account status cannot be toggled to inactive (`IsActive = false`).
+        3. **Deletion Immunity:** The primary admin account cannot be deleted.
+        4. **Reserved Username:** `CreateUser` explicitly blocks registering new accounts named `UserAccount.DEFAULT_ADMIN_LOGIN`.
+
 ---
 
 ## 📷 GDI+ & Image Processing

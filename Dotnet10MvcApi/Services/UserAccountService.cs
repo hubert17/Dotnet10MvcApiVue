@@ -242,6 +242,152 @@ namespace Dotnet10MvcApi.Services
             catch { return null; }
         }
 
+        // ─── User Management (Admin) ─────────────────────────────────────────────
+
+        public async Task<List<UserAccount>> GetAllUsersAsync()
+        {
+            await EnsureDefaultUsersExistAsync();
+            try
+            {
+                return await _db.Users
+                    .AsNoTracking()
+                    .OrderByDescending(u => u.CreatedOn)
+                    .ToListAsync();
+            }
+            catch
+            {
+                return new List<UserAccount>();
+            }
+        }
+
+        public async Task<UserAccount?> GetByIdAsync(Guid id)
+        {
+            try
+            {
+                return await _db.Users.FindAsync(id);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<(bool Success, string? Error)> UpdateUserRolesAsync(Guid userId, string roles)
+        {
+            try
+            {
+                var user = await _db.Users.FindAsync(userId);
+                if (user == null) return (false, "User not found.");
+
+                var cleanRoles = Regex.Replace(roles ?? string.Empty, @"\s+", "");
+
+                // Secondary Server Validation: Primary seeded admin account role protection
+                if (user.UserName.Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase))
+                {
+                    var hasAdminRole = cleanRoles.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Any(r => r.Equals(UserAccount.DEFAULT_ADMIN_ROLENAME, StringComparison.OrdinalIgnoreCase));
+
+                    if (!hasAdminRole)
+                    {
+                        return (false, $"The primary '{UserAccount.DEFAULT_ADMIN_LOGIN}' account is protected and must retain the '{UserAccount.DEFAULT_ADMIN_ROLENAME}' role.");
+                    }
+                }
+
+                user.Roles = cleanRoles;
+                _db.Entry(user).State = EntityState.Modified;
+                await _db.SaveChangesAsync();
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to update roles: {ex.Message}");
+            }
+        }
+
+        public async Task<(bool Success, bool IsActive, string? Error)> ToggleUserStatusAsync(Guid userId, string currentAdminUserName)
+        {
+            try
+            {
+                var user = await _db.Users.FindAsync(userId);
+                if (user == null) return (false, false, "User not found.");
+
+                // Secondary Server Validation: Primary seeded admin status protection
+                if (user.UserName.Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase))
+                {
+                    return (false, user.IsActive, $"The primary '{UserAccount.DEFAULT_ADMIN_LOGIN}' account is permanent and cannot be deactivated.");
+                }
+
+                if (user.UserName.Equals(currentAdminUserName?.Trim(), StringComparison.OrdinalIgnoreCase) && user.IsActive)
+                {
+                    return (false, user.IsActive, "You cannot deactivate your own active admin account.");
+                }
+
+                user.IsActive = !user.IsActive;
+                _db.Entry(user).State = EntityState.Modified;
+                await _db.SaveChangesAsync();
+                return (true, user.IsActive, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, false, $"Failed to toggle status: {ex.Message}");
+            }
+        }
+
+        public async Task<(bool Success, string? Error)> AdminResetPasswordAsync(Guid userId, string newPassword)
+        {
+            if (string.IsNullOrWhiteSpace(newPassword))
+                return (false, "New password cannot be empty.");
+
+            if (newPassword.Trim().Length < 4)
+                return (false, "Password must be at least 4 characters long.");
+
+            try
+            {
+                var user = await _db.Users.FindAsync(userId);
+                if (user == null) return (false, "User not found.");
+
+                UserAccount.CreatePasswordHash(newPassword, out var hash, out var salt);
+                user.PasswordHash = hash;
+                user.PasswordSalt = salt;
+
+                _db.Entry(user).State = EntityState.Modified;
+                await _db.SaveChangesAsync();
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to reset password: {ex.Message}");
+            }
+        }
+
+        public async Task<(bool Success, string? Error)> DeleteUserAsync(Guid userId, string currentAdminUserName)
+        {
+            try
+            {
+                var user = await _db.Users.FindAsync(userId);
+                if (user == null) return (false, "User not found.");
+
+                // Secondary Server Validation: Primary seeded admin deletion protection
+                if (user.UserName.Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase))
+                {
+                    return (false, $"The primary '{UserAccount.DEFAULT_ADMIN_LOGIN}' account is system-critical and cannot be deleted.");
+                }
+
+                if (user.UserName.Equals(currentAdminUserName?.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return (false, "You cannot delete your currently logged-in account.");
+                }
+
+                _db.Users.Remove(user);
+                await _db.SaveChangesAsync();
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to delete user: {ex.Message}");
+            }
+        }
+
         // ─── Claims Builder ──────────────────────────────────────────────────────
 
         /// <summary>
@@ -254,7 +400,7 @@ namespace Dotnet10MvcApi.Services
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Role, user.Roles)
             };
-            AddPiranhaAdminClaims(claims, user.Roles);
+            AddPiranhaRoleClaims(claims, user.Roles);
             return claims;
         }
 
@@ -266,7 +412,7 @@ namespace Dotnet10MvcApi.Services
                 new Claim(ClaimTypes.Name, userName),
                 new Claim(ClaimTypes.Role, role)
             };
-            AddPiranhaAdminClaims(claims, role);
+            AddPiranhaRoleClaims(claims, role);
             return claims;
         }
 
@@ -278,23 +424,23 @@ namespace Dotnet10MvcApi.Services
             {
                 var seedUsers = new[]
                 {
-                    (Username: "admin", Password: "admin", Role: "admin")
+                    (Username: UserAccount.DEFAULT_ADMIN_LOGIN, Password: UserAccount.DEFAULT_ADMIN_LOGIN, Role: UserAccount.DEFAULT_ADMIN_ROLENAME)
                 };
 
                 bool addedAny = false;
-                foreach (var (username, password, role) in seedUsers)
+                foreach (var su in seedUsers)
                 {
-                    var exists = await _db.Users.AnyAsync(u => u.UserName == username);
+                    var exists = await _db.Users.AnyAsync(u => u.UserName == su.Username);
                     if (!exists)
                     {
-                        UserAccount.CreatePasswordHash(password, out var hash, out var salt);
+                        UserAccount.CreatePasswordHash(su.Password, out var hash, out var salt);
                         _db.Users.Add(new UserAccount
                         {
                             Id = Guid.NewGuid(),
-                            UserName = username,
+                            UserName = su.Username,
                             PasswordHash = hash,
                             PasswordSalt = salt,
-                            Roles = role,
+                            Roles = su.Role,
                             CreatedOn = DateTime.UtcNow,
                             IsActive = true
                         });
@@ -319,23 +465,23 @@ namespace Dotnet10MvcApi.Services
             {
                 var seedUsers = new[]
                 {
-                    (Username: "admin", Password: "admin", Role: "admin")
+                    (Username: UserAccount.DEFAULT_ADMIN_LOGIN, Password: UserAccount.DEFAULT_ADMIN_LOGIN, Role: UserAccount.DEFAULT_ADMIN_ROLENAME)
                 };
 
                 bool addedAny = false;
-                foreach (var (username, password, role) in seedUsers)
+                foreach (var su in seedUsers)
                 {
-                    var exists = _db.Users.Any(u => u.UserName == username);
+                    var exists = _db.Users.Any(u => u.UserName == su.Username);
                     if (!exists)
                     {
-                        UserAccount.CreatePasswordHash(password, out var hash, out var salt);
+                        UserAccount.CreatePasswordHash(su.Password, out var hash, out var salt);
                         _db.Users.Add(new UserAccount
                         {
                             Id = Guid.NewGuid(),
-                            UserName = username,
+                            UserName = su.Username,
                             PasswordHash = hash,
                             PasswordSalt = salt,
-                            Roles = role,
+                            Roles = su.Role,
                             CreatedOn = DateTime.UtcNow,
                             IsActive = true
                         });
@@ -359,18 +505,87 @@ namespace Dotnet10MvcApi.Services
 
         // ─── Private helpers ─────────────────────────────────────────────────────
 
-        private static void AddPiranhaAdminClaims(List<Claim> claims, string role)
+        private static void AddPiranhaRoleClaims(List<Claim> claims, string rolesString)
         {
-            if (!string.IsNullOrWhiteSpace(role) && role.Equals("admin", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(rolesString)) return;
+
+            var roles = rolesString.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                   .Select(r => r.Trim().ToLower())
+                                   .ToHashSet();
+
+            void AddPerms(params string[] perms)
             {
-                claims.Add(new Claim(ClaimTypes.Role, "admin"));
+                foreach (var p in perms)
+                {
+                    if (!claims.Any(c => c.Type == p))
+                        claims.Add(new Claim(p, p));
+                }
+            }
+
+            // Admin role -> All Piranha Manager permissions + System Admin claim
+            if (roles.Contains(UserAccount.DEFAULT_ADMIN_ROLENAME.ToLower()))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, UserAccount.DEFAULT_ADMIN_ROLENAME));
                 claims.Add(new Claim(ClaimTypes.Role, "Admin"));
                 try
                 {
                     foreach (var permission in Piranha.Manager.Permission.All())
-                        claims.Add(new Claim(permission, permission));
+                        AddPerms(permission);
                 }
                 catch { }
+            }
+
+            // CmsEditor role -> Full page, post, media, comment, & alias management
+            if (roles.Contains("cmseditor") || roles.Contains("editor"))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "CmsEditor"));
+                claims.Add(new Claim(ClaimTypes.Role, "editor"));
+                claims.Add(new Claim(ClaimTypes.Role, "Editor"));
+                AddPerms(
+                    Piranha.Manager.Permission.Admin,
+                    Piranha.Manager.Permission.Pages, Piranha.Manager.Permission.PagesAdd, Piranha.Manager.Permission.PagesEdit, Piranha.Manager.Permission.PagesSave, Piranha.Manager.Permission.PagesPublish, Piranha.Manager.Permission.PagesDelete,
+                    Piranha.Manager.Permission.Posts, Piranha.Manager.Permission.PostsAdd, Piranha.Manager.Permission.PostsEdit, Piranha.Manager.Permission.PostsSave, Piranha.Manager.Permission.PostsPublish, Piranha.Manager.Permission.PostsDelete,
+                    Piranha.Manager.Permission.Media, Piranha.Manager.Permission.MediaAdd, Piranha.Manager.Permission.MediaEdit, Piranha.Manager.Permission.MediaDelete,
+                    Piranha.Manager.Permission.Comments, Piranha.Manager.Permission.CommentsApprove, Piranha.Manager.Permission.CommentsDelete,
+                    Piranha.Manager.Permission.Aliases
+                );
+            }
+
+            // CmsWriter role -> Post & Media content creation, drafting, and self-publishing
+            if (roles.Contains("cmswriter") || roles.Contains("writer") || roles.Contains("author"))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "CmsWriter"));
+                claims.Add(new Claim(ClaimTypes.Role, "writer"));
+                claims.Add(new Claim(ClaimTypes.Role, "Writer"));
+                AddPerms(
+                    Piranha.Manager.Permission.Admin,
+                    Piranha.Manager.Permission.Pages, Piranha.Manager.Permission.PagesEdit, Piranha.Manager.Permission.PagesSave,
+                    Piranha.Manager.Permission.Posts, Piranha.Manager.Permission.PostsAdd, Piranha.Manager.Permission.PostsEdit, Piranha.Manager.Permission.PostsSave, Piranha.Manager.Permission.PostsPublish,
+                    Piranha.Manager.Permission.Media, Piranha.Manager.Permission.MediaAdd, Piranha.Manager.Permission.MediaEdit
+                );
+            }
+
+            // CmsModerator role -> Comment moderation & content review
+            if (roles.Contains("cmsmoderator") || roles.Contains("moderator") || roles.Contains("comment moderator"))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "CmsModerator"));
+                claims.Add(new Claim(ClaimTypes.Role, "moderator"));
+                claims.Add(new Claim(ClaimTypes.Role, "Moderator"));
+                claims.Add(new Claim(ClaimTypes.Role, "comment moderator"));
+                claims.Add(new Claim(ClaimTypes.Role, "Comment Moderator"));
+                AddPerms(
+                    Piranha.Manager.Permission.Admin,
+                    Piranha.Manager.Permission.Pages, Piranha.Manager.Permission.PagesEdit, Piranha.Manager.Permission.PagesSave,
+                    Piranha.Manager.Permission.Comments, Piranha.Manager.Permission.CommentsApprove, Piranha.Manager.Permission.CommentsDelete,
+                    Piranha.Manager.Permission.Posts, Piranha.Manager.Permission.Media
+                );
+            }
+
+            // User role -> Standard non-manager user
+            if (roles.Contains("user"))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "user"));
+                claims.Add(new Claim(ClaimTypes.Role, "User"));
             }
         }
     }

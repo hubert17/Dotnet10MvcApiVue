@@ -45,7 +45,7 @@ public class HomeController : Controller
         return View("About");
     }
 
-    [Authorize(Roles = "admin")]
+    [Authorize(Roles = Dotnet10MvcApi.Models.Entities.UserAccount.DEFAULT_ADMIN_ROLENAME)]
     public IActionResult ForRoleUser()
     {
         ViewBag.Message = "Authorized ADMIN page.";

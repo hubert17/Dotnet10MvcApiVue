@@ -34,24 +34,11 @@ namespace Dotnet10MvcApi.Services
             {
                 var cfgUsername = user["Username"]?.Trim().ToLower();
                 var cfgPassword = user["Password"];
-                var cfgRole = user["Role"] ?? "admin";
+                var cfgRole = user["Role"] ?? Dotnet10MvcApi.Models.Entities.UserAccount.DEFAULT_ADMIN_ROLENAME;
 
                 if (cfgUsername == username.Trim().ToLower() && cfgPassword == password)
                 {
-                    var claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name, cfgUsername),
-                        new Claim(ClaimTypes.Role, cfgRole)
-                    };
-
-                    // Add all Piranha Manager permission claims so save/publish/delete work
-                    if (cfgRole.Equals("admin", StringComparison.OrdinalIgnoreCase))
-                    {
-                        foreach (var permission in Piranha.Manager.Permission.All())
-                        {
-                            claims.Add(new Claim(permission, permission));
-                        }
-                    }
+                    var claims = UserAccountService.BuildClaims(cfgUsername, cfgRole);
 
                     var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                     var principal = new ClaimsPrincipal(identity);

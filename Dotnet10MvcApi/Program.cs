@@ -81,9 +81,84 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = audience,
         ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
     };
+});
+
+// 2b. Configure Piranha Manager Authorization Policies for Standardized Roles:
+// Roles: "admin", "CmsEditor", "CmsWriter", "CmsModerator"
+builder.Services.AddAuthorization(options =>
+{
+    foreach (var permission in Piranha.Manager.Permission.All())
+    {
+        options.AddPolicy(permission, policy =>
+        {
+            switch (permission)
+            {
+                // Entry permission into manager portal
+                case Piranha.Manager.Permission.Admin:
+                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsWriter", "writer", "Writer", "CmsModerator", "moderator", "Moderator", "comment moderator");
+                    break;
+
+                // Pages Navigation (All CMS Roles)
+                case Piranha.Manager.Permission.Pages:
+                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsWriter", "writer", "Writer", "CmsModerator", "moderator", "Moderator");
+                    break;
+
+                // Pages View & Edit (CmsWriter, CmsModerator, CmsEditor & Admins)
+                case Piranha.Manager.Permission.PagesEdit:
+                case Piranha.Manager.Permission.PagesSave:
+                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsWriter", "writer", "Writer", "CmsModerator", "moderator", "Moderator");
+                    break;
+
+                // Pages Structure & Publishing (CmsEditor & Admins)
+                case Piranha.Manager.Permission.PagesAdd:
+                case Piranha.Manager.Permission.PagesPublish:
+                case Piranha.Manager.Permission.PagesDelete:
+                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor");
+                    break;
+
+                // Posts Drafting, Editing & Publishing (CmsWriter for own posts, CmsEditor & Admins)
+                case Piranha.Manager.Permission.Posts:
+                case Piranha.Manager.Permission.PostsAdd:
+                case Piranha.Manager.Permission.PostsEdit:
+                case Piranha.Manager.Permission.PostsSave:
+                case Piranha.Manager.Permission.PostsPublish:
+                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsWriter", "writer", "Writer");
+                    break;
+
+                // Posts Deleting (CmsEditor & Admins)
+                case Piranha.Manager.Permission.PostsDelete:
+                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor");
+                    break;
+
+                // Media Assets Management (CmsWriter, CmsModerator, CmsEditor & Admins)
+                case Piranha.Manager.Permission.Media:
+                case Piranha.Manager.Permission.MediaAdd:
+                case Piranha.Manager.Permission.MediaEdit:
+                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsWriter", "writer", "Writer", "CmsModerator", "moderator", "Moderator");
+                    break;
+                case Piranha.Manager.Permission.MediaDelete:
+                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor");
+                    break;
+
+                // Comments Moderation (CmsModerator, CmsEditor & Admins)
+                case Piranha.Manager.Permission.Comments:
+                case Piranha.Manager.Permission.CommentsApprove:
+                case Piranha.Manager.Permission.CommentsDelete:
+                    policy.RequireRole("admin", "Admin", "CmsEditor", "editor", "Editor", "CmsModerator", "moderator", "Moderator");
+                    break;
+
+                // System & Site Administration (Admins Only)
+                case Piranha.Manager.Permission.Aliases:
+                case Piranha.Manager.Permission.Sites:
+                case Piranha.Manager.Permission.Modules:
+                default:
+                    policy.RequireRole("admin", "Admin");
+                    break;
+            }
+        });
+    }
 });
 
 // 3. Register standard services and native OpenAPI
@@ -246,6 +321,87 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
+
+// Security Guard: Allow CmsWriter users to view, edit, and save drafts of others' posts, but restrict PUBLISHING to ONLY their own posts
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/manager/api/post/save") &&
+        HttpMethods.IsPost(context.Request.Method) &&
+        context.User.Identity?.IsAuthenticated == true &&
+        (context.User.IsInRole("CmsWriter") || context.User.IsInRole("writer") || context.User.IsInRole("Writer")) &&
+        !context.User.IsInRole(Dotnet10MvcApi.Models.Entities.UserAccount.DEFAULT_ADMIN_ROLENAME) &&
+        !context.User.IsInRole("admin") &&
+        !context.User.IsInRole("Admin") &&
+        !context.User.IsInRole("CmsEditor") &&
+        !context.User.IsInRole("editor") &&
+        !context.User.IsInRole("Editor"))
+    {
+        context.Request.EnableBuffering();
+        using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true);
+        var bodyText = await reader.ReadToEndAsync();
+        context.Request.Body.Position = 0;
+
+        if (!string.IsNullOrWhiteSpace(bodyText))
+        {
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(bodyText);
+                var root = doc.RootElement;
+
+                // Check if request attempts a PUBLISH action
+                var isPublishAction = false;
+                if (root.TryGetProperty("action", out var actionProp) &&
+                    string.Equals(actionProp.GetString(), "publish", StringComparison.OrdinalIgnoreCase))
+                {
+                    isPublishAction = true;
+                }
+
+                if (root.TryGetProperty("id", out var idProp) &&
+                    Guid.TryParse(idProp.GetString(), out var postId) &&
+                    postId != Guid.Empty)
+                {
+                    var api = context.RequestServices.GetRequiredService<Piranha.IApi>();
+                    var existingPost = await api.Posts.GetByIdAsync<Piranha.Models.PostInfo>(postId);
+
+                    if (existingPost != null)
+                    {
+                        var currentUsername = context.User.Identity?.Name ?? "";
+                        var metaKeywords = existingPost.MetaKeywords ?? "";
+
+                        if (existingPost.Published == null &&
+                            root.TryGetProperty("published", out var pubProp) &&
+                            !string.IsNullOrWhiteSpace(pubProp.GetString()))
+                        {
+                            isPublishAction = true;
+                        }
+
+                        // Determine if post belongs to current writer
+                        var isOwnPost = true;
+                        if (metaKeywords.Contains("author:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            isOwnPost = metaKeywords.Contains($"author:{currentUsername}", StringComparison.OrdinalIgnoreCase);
+                        }
+
+                        // Block ONLY publish operations on posts authored by others
+                        if (isPublishAction && !isOwnPost)
+                        {
+                            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                            context.Response.ContentType = "application/json";
+                            await context.Response.WriteAsync("{\"status\":{\"type\":\"error\",\"message\":\"CmsWriter users can view, edit, and save drafts of other authors' posts, but are ONLY permitted to publish their own posts.\"}}");
+                            return;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Fallthrough on non-JSON payloads
+            }
+        }
+    }
+
+    await next();
+});
 
 // Ensure Anti-Forgery XSRF-TOKEN cookie & contrast fix CSS are populated on /manager requests
 app.Use(async (context, next) =>

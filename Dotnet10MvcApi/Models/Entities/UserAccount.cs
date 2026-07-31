@@ -9,7 +9,7 @@ namespace Dotnet10MvcApi.Models.Entities
     [Table("Users")]
     public class UserAccount
     {
-        public const string DEFAULT_ADMIN_LOGIN = "admin";
+        public const string DEFAULT_ADMIN_LOGIN = "admin"; // use as default login password
         public const string DEFAULT_ADMIN_ROLENAME = "admin";
 
         [Key]

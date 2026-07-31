@@ -1,0 +1,745 @@
+@using Dotnet10MvcApi.Models.Entities
+@{
+    ViewBag.Title = "User Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@* Section for Page Head Styling *@
+@section head {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@fortawesome/fontawesome-free@5.15.4/css/all.min.css" />
+    <style>
+        .user-mgmt-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 1.75rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .stat-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .role-pill {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            padding: 0.35em 0.7em;
+            border-radius: 50rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            user-select: none;
+        }
+        .role-pill:hover {
+            transform: scale(1.05);
+            filter: brightness(0.92);
+        }
+        .role-pill-selectable {
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .role-pill-selectable.selected {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        .user-table-container {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            background: #fff;
+        }
+        .table-user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #334155;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1060;
+            min-width: 280px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+    </style>
+}
+
+<div id="userApp" class="container-fluid py-3" v-cloak @@vue:mounted="loadUsers">
+    @Html.AntiForgeryToken()
+
+    @* Header Banner *@
+    <div class="user-mgmt-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h2 class="h3 font-weight-bold mb-1"><i class="fas fa-users-cog mr-2 text-info"></i>User Management</h2>
+            <p class="text-muted mb-0 text-light opacity-75">Manage user accounts, assign security roles, and reset passwords.</p>
+        </div>
+        <div>
+            <button class="btn btn-success btn-lg shadow-sm" @@click="openCreateModal">
+                <i class="fas fa-user-plus mr-2"></i>Add New User
+            </button>
+        </div>
+    </div>
+
+    @* Stat Overview Cards *@
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+            <div class="card stat-card bg-white border-left border-primary" style="border-left-width: 4px !important;">
+                <div class="card-body py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-uppercase text-muted small font-weight-bold">Total Users</div>
+                            <div class="h3 font-weight-bold mb-0 text-primary">{{ users.length }}</div>
+                        </div>
+                        <div class="text-primary opacity-50"><i class="fas fa-users fa-2x"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+            <div class="card stat-card bg-white border-left border-success" style="border-left-width: 4px !important;">
+                <div class="card-body py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-uppercase text-muted small font-weight-bold">Active Accounts</div>
+                            <div class="h3 font-weight-bold mb-0 text-success">{{ activeUsersCount() }}</div>
+                        </div>
+                        <div class="text-success opacity-50"><i class="fas fa-user-check fa-2x"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
+            <div class="card stat-card bg-white border-left border-warning" style="border-left-width: 4px !important;">
+                <div class="card-body py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-uppercase text-muted small font-weight-bold">Admins</div>
+                            <div class="h3 font-weight-bold mb-0 text-warning">{{ adminUsersCount() }}</div>
+                        </div>
+                        <div class="text-warning opacity-50"><i class="fas fa-user-shield fa-2x"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card stat-card bg-white border-left border-info" style="border-left-width: 4px !important;">
+                <div class="card-body py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-uppercase text-muted small font-weight-bold">Standard Users</div>
+                            <div class="h3 font-weight-bold mb-0 text-info">{{ regularUsersCount() }}</div>
+                        </div>
+                        <div class="text-info opacity-50"><i class="fas fa-user fa-2x"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Controls Bar (Search & Filter) *@
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body p-3">
+            <div class="row align-items-center">
+                <div class="col-md-5 mb-2 mb-md-0">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span>
+                        </div>
+                        <input type="text" class="form-control border-left-0 bg-light" placeholder="Search by username or role..." v-model="searchQuery" />
+                    </div>
+                </div>
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <select class="custom-select bg-light" v-model="roleFilter">
+                        <option value="">All Roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="user">User</option>
+                        <option value="editor">Editor</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2 mb-md-0">
+                    <select class="custom-select bg-light" v-model="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active Only</option>
+                        <option value="inactive">Inactive Only</option>
+                    </select>
+                </div>
+                <div class="col-md-1 text-right">
+                    <button class="btn btn-outline-secondary btn-block" @@click="loadUsers" title="Refresh List">
+                        <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Loading Spinner *@
+    <div v-if="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="sr-only">Loading users...</span>
+        </div>
+        <p class="mt-2 text-muted">Fetching user accounts...</p>
+    </div>
+
+    @* User Table *@
+    <div v-else class="user-table-container">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th style="width: 25%;">User Account</th>
+                        <th style="width: 30%;">Assigned Roles (Click to Switch)</th>
+                        <th style="width: 15%;">Status</th>
+                        <th style="width: 15%;">Last Login</th>
+                        <th style="width: 15%; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="filteredUsers().length === 0">
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fas fa-user-slash fa-3x mb-3 text-secondary opacity-50 d-block"></i>
+                            No users found matching your criteria.
+                        </td>
+                    </tr>
+                    <tr v-for="user in filteredUsers()" :key="user.id">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="table-user-avatar mr-3">
+                                    {{ user.userName.charAt(0).toUpperCase() }}
+                                </div>
+                                <div>
+                                    <div class="font-weight-bold text-dark">{{ user.userName }}</div>
+                                    <small class="text-muted"><i class="far fa-calendar-alt mr-1"></i>Joined {{ formatDate(user.createdOn) }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            @* 1-Click Interactive Role Pills & Quick Role Switcher *@
+                            <div class="d-flex align-items-center flex-wrap gap-1">
+                                <span v-for="r in getRolesList(user.roles)" :key="r"
+                                      class="badge role-pill"
+                                      :class="getRoleBadgeClass(r)"
+                                      @@click="openQuickRoleMenu(user)"
+                                      :title="'Click to modify roles for ' + user.userName">
+                                    <i class="fas fa-tag mr-1"></i>{{ r }}
+                                </span>
+                                <span v-if="!user.roles" class="badge badge-secondary role-pill" @@click="openQuickRoleMenu(user)">
+                                    None
+                                </span>
+                                <button class="btn btn-link btn-sm text-decoration-none p-0 ml-1" @@click="openQuickRoleMenu(user)" title="Manage Roles">
+                                    <i class="fas fa-pen text-muted small"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            @* Active / Inactive Status Switcher *@
+                            <button class="btn btn-sm"
+                                    :class="user.isActive ? 'btn-outline-success' : 'btn-outline-secondary'"
+                                    @@click="toggleStatus(user)"
+                                    :disabled="user.userName === '@UserAccount.DEFAULT_ADMIN_LOGIN'">
+                                <i class="fas" :class="user.isActive ? 'fa-check-circle text-success' : 'fa-minus-circle text-muted'"></i>
+                                {{ user.isActive ? 'Active' : 'Inactive' }}
+                            </button>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ user.lastLogin }}</small>
+                        </td>
+                        <td class="text-right">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-outline-warning" @@click="openResetPasswordModal(user)" title="Reset Password">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" @@click="confirmDeleteUser(user)" title="Delete User" :disabled="user.userName === '@UserAccount.DEFAULT_ADMIN_LOGIN'">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @* ─── Add User Modal ─── *@
+    <div class="modal fade" id="createUserModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="fas fa-user-plus mr-2 text-success"></i>Add New User Account</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <form @@submit.prevent="submitCreateUser">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Email</label>
+                            <input type="email" class="form-control" v-model="newUser.username" placeholder="e.g. john.doe" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">Password</label>
+                            <input type="password" class="form-control" v-model="newUser.password" placeholder="Set user password" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold d-block">Select Role(s)</label>
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <span v-for="r in defaultRoleOptions" :key="r"
+                                      class="badge role-pill role-pill-selectable"
+                                      :class="[getRoleBadgeClass(r), isNewUserRoleSelected(r) ? 'selected' : '']"
+                                      @@click="toggleNewUserRole(r)">
+                                    <i class="fas" :class="isNewUserRoleSelected(r) ? 'fa-check-circle' : 'fa-circle'"></i> {{ r }}
+                                </span>
+                            </div>
+                            <input type="text" class="form-control form-control-sm" v-model="newUser.customRoles" placeholder="Or type comma-separated roles (e.g. admin, editor)" />
+                        </div>
+                        <div v-if="isNewUserRoleSelected('admin')" class="alert alert-warning py-2 px-3 mb-3 small border-warning">
+                            <i class="fas fa-exclamation-triangle mr-2 text-warning"></i><strong>Security Warning:</strong> Granting the <code>admin</code> role gives full system administration privileges.
+                        </div>
+                        <div class="form-group mb-0">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="newUserActiveSwitch" v-model="newUser.isActive" />
+                                <label class="custom-control-label font-weight-bold" for="newUserActiveSwitch">Active Account</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" @@click="submitCreateUser" :disabled="saving">
+                        <span v-if="saving" class="spinner-border spinner-border-sm mr-1"></span>
+                        Create User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ─── Edit Roles Modal (Super Easy 1-Click Role Switcher) ─── *@
+    <div class="modal fade" id="editRolesModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="fas fa-user-tag mr-2 text-info"></i>Assign Roles for <strong>{{ activeUser ? activeUser.userName : '' }}</strong></h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Click on any role pill below to enable or disable it for this account.</p>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span v-for="r in defaultRoleOptions" :key="r"
+                              class="badge role-pill role-pill-selectable p-2"
+                              :class="[getRoleBadgeClass(r), isRoleSelected(r) ? 'selected' : '']"
+                              @@click="toggleRoleSelection(r)"
+                              style="font-size: 1rem;">
+                            <i class="fas" :class="isRoleSelected(r) ? 'fa-check-circle' : 'fa-plus-circle'"></i> {{ r.toUpperCase() }}
+                        </span>
+                    </div>
+                    <div v-if="isRoleSelected('admin')" class="alert alert-warning py-2 px-3 mb-3 small border-warning">
+                        <i class="fas fa-exclamation-triangle mr-2 text-warning"></i><strong>Security Warning:</strong> Granting the <code>admin</code> role gives full system administration privileges.
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="small text-muted font-weight-bold">Custom Roles (comma separated)</label>
+                        <input type="text" class="form-control" v-model="editRolesInput" placeholder="e.g. admin, editor" />
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @@click="submitUpdateRoles" :disabled="saving">
+                        <span v-if="saving" class="spinner-border spinner-border-sm mr-1"></span>
+                        Save Roles
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ─── Reset Password Modal ─── *@
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="fas fa-key mr-2 text-warning"></i>Reset Password for <strong>{{ activeUser ? activeUser.userName : '' }}</strong></h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <form @@submit.prevent="submitResetPassword">
+                        <div class="form-group mb-0">
+                            <label class="font-weight-bold">New Password</label>
+                            <div class="input-group">
+                                <input :type="showNewPassword ? 'text' : 'password'" class="form-control" v-model="newPassword" placeholder="Enter new password" required />
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" type="button" @@click="showNewPassword = !showNewPassword">
+                                        <i class="fas" :class="showNewPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning font-weight-bold" @@click="submitResetPassword" :disabled="saving">
+                        <span v-if="saving" class="spinner-border spinner-border-sm mr-1"></span>
+                        Update Password
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Toast Alert System *@
+    <div v-if="toastMessage" class="toast-notification alert alert-dismissible fade show" :class="'alert-' + toastType" role="alert">
+        <i class="fas mr-2" :class="toastType === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'"></i>
+        {{ toastMessage }}
+        <button type="button" class="close" @@click="toastMessage = ''">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+</div>
+
+@section scripts {
+    <script type="module">
+        import { createApp } from "https://cdn.jsdelivr.net/npm/petite-vue@0.4.1/dist/petite-vue.es.js";
+
+        const app = {
+            users: [],
+            loading: true,
+            saving: false,
+            searchQuery: '',
+            roleFilter: '',
+            statusFilter: '',
+            defaultAdminLogin: '@UserAccount.DEFAULT_ADMIN_LOGIN'.toLowerCase(),
+            defaultAdminRole: '@UserAccount.DEFAULT_ADMIN_ROLENAME'.toLowerCase(),
+            defaultRoleOptions: ['@UserAccount.DEFAULT_ADMIN_ROLENAME', 'CmsEditor', 'CmsWriter', 'CmsModerator', 'user'],
+            
+            // Modal state
+            activeUser: null,
+            editRolesInput: '',
+            newPassword: '',
+            showNewPassword: false,
+            
+            // New user form state
+            newUser: {
+                username: '',
+                password: '',
+                selectedRoles: ['user'],
+                customRoles: '',
+                isActive: true
+            },
+
+            // Toast state
+            toastMessage: '',
+            toastType: 'success',
+
+            showToast(msg, type = 'success') {
+                this.toastMessage = msg;
+                this.toastType = type;
+                setTimeout(() => {
+                    if (this.toastMessage === msg) this.toastMessage = '';
+                }, 4000);
+            },
+
+            activeUsersCount() {
+                return this.users.filter(u => u.isActive).length;
+            },
+            adminUsersCount() {
+                return this.users.filter(u => u.roles && u.roles.toLowerCase().includes('admin')).length;
+            },
+            regularUsersCount() {
+                return this.users.filter(u => !u.roles || !u.roles.toLowerCase().includes('admin')).length;
+            },
+
+            filteredUsers() {
+                return this.users.filter(u => {
+                    const matchesSearch = !this.searchQuery || 
+                        u.userName.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+                        (u.roles && u.roles.toLowerCase().includes(this.searchQuery.toLowerCase()));
+
+                    const matchesRole = !this.roleFilter || 
+                        (u.roles && u.roles.toLowerCase().includes(this.roleFilter.toLowerCase()));
+
+                    const matchesStatus = !this.statusFilter ||
+                        (this.statusFilter === 'active' && u.isActive) ||
+                        (this.statusFilter === 'inactive' && !u.isActive);
+
+                    return matchesSearch && matchesRole && matchesStatus;
+                });
+            },
+
+            getVerificationToken() {
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                return tokenInput ? tokenInput.value : '';
+            },
+
+            async loadUsers() {
+                this.loading = true;
+                try {
+                    const res = await fetch('/Account/Users/List');
+                    const data = await res.json();
+                    if (data.success) {
+                        const rawUsers = data.users;
+                        if (Array.isArray(rawUsers)) {
+                            this.users = rawUsers;
+                        } else if (rawUsers && Array.isArray(rawUsers.$values)) {
+                            this.users = rawUsers.$values;
+                        } else {
+                            this.users = [];
+                        }
+                    } else {
+                        this.showToast(data.message || 'Failed to fetch users', 'danger');
+                    }
+                } catch (e) {
+                    this.showToast('Network error loading users', 'danger');
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            getRolesList(rolesStr) {
+                if (!rolesStr) return [];
+                return rolesStr.split(',').map(s => s.trim()).filter(s => s);
+            },
+
+            getRoleBadgeClass(role) {
+                const r = role.toLowerCase();
+                if (r === this.defaultAdminRole || r === 'admin') return 'badge-danger';
+                if (r === 'cmseditor' || r === 'editor') return 'badge-primary';
+                if (r === 'cmswriter' || r === 'writer' || r === 'author') return 'badge-info';
+                if (r === 'cmsmoderator' || r === 'moderator' || r === 'comment moderator') return 'badge-warning';
+                return 'badge-secondary';
+            },
+
+            formatDate(dateStr) {
+                if (!dateStr) return 'N/A';
+                return dateStr.split(' ')[0];
+            },
+
+            // ─── Modals & Actions ───
+
+            openCreateModal() {
+                this.newUser = { username: '', password: '', selectedRoles: ['user'], customRoles: '', isActive: true };
+                $('#createUserModal').modal('show');
+            },
+
+            isNewUserRoleSelected(role) {
+                const target = role.toLowerCase();
+                if (this.newUser.selectedRoles.some(r => r.toLowerCase() === target)) return true;
+                if (this.newUser.customRoles) {
+                    const custom = this.newUser.customRoles.split(',').map(s => s.trim().toLowerCase());
+                    if (custom.includes(target)) return true;
+                }
+                return false;
+            },
+
+            toggleNewUserRole(role) {
+                const idx = this.newUser.selectedRoles.indexOf(role);
+                if (idx > -1) {
+                    this.newUser.selectedRoles.splice(idx, 1);
+                } else {
+                    this.newUser.selectedRoles.push(role);
+                    if (role.toLowerCase() === 'admin') {
+                        this.showToast("Security Warning: Assigning 'admin' role grants full administrative access!", 'warning');
+                    }
+                }
+            },
+
+            async submitCreateUser() {
+                if (!this.newUser.username || !this.newUser.password) {
+                    this.showToast('Username and password are required', 'danger');
+                    return;
+                }
+
+                let rolesList = [...this.newUser.selectedRoles];
+                if (this.newUser.customRoles) {
+                    const extra = this.newUser.customRoles.split(',').map(s => s.trim()).filter(s => s);
+                    rolesList = [...rolesList, ...extra];
+                }
+                const rolesStr = [...new Set(rolesList)].join(',');
+
+                this.saving = true;
+                try {
+                    const formData = new FormData();
+                    formData.append('username', this.newUser.username);
+                    formData.append('password', this.newUser.password);
+                    formData.append('roles', rolesStr);
+                    formData.append('isActive', this.newUser.isActive);
+                    formData.append('__RequestVerificationToken', this.getVerificationToken());
+
+                    const res = await fetch('/Account/Users/Create', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.showToast(data.message, 'success');
+                        $('#createUserModal').modal('hide');
+                        await this.loadUsers();
+                    } else {
+                        this.showToast(data.message || 'Creation failed', 'danger');
+                    }
+                } catch (e) {
+                    this.showToast('Error creating user', 'danger');
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            openQuickRoleMenu(user) {
+                this.activeUser = user;
+                this.editRolesInput = user.roles || '';
+                $('#editRolesModal').modal('show');
+            },
+
+            isRoleSelected(role) {
+                if (!this.editRolesInput) return false;
+                const currentRoles = this.editRolesInput.split(',').map(s => s.trim().toLowerCase());
+                return currentRoles.includes(role.toLowerCase());
+            },
+
+            toggleRoleSelection(role) {
+                // Rule 1: Cannot remove default admin role from default admin user account
+                if (this.activeUser && this.activeUser.userName.toLowerCase() === this.defaultAdminLogin && role.toLowerCase() === this.defaultAdminRole) {
+                    if (this.isRoleSelected(this.defaultAdminRole)) {
+                        this.showToast("The primary '" + this.defaultAdminLogin + "' account must retain the '" + this.defaultAdminRole + "' role.", 'danger');
+                        return;
+                    }
+                }
+
+                let currentRoles = this.getRolesList(this.editRolesInput);
+                const existsIdx = currentRoles.findIndex(r => r.toLowerCase() === role.toLowerCase());
+                if (existsIdx > -1) {
+                    currentRoles.splice(existsIdx, 1);
+                } else {
+                    currentRoles.push(role);
+                    // Rule 2: Warning when assigning admin role
+                    if (role.toLowerCase() === 'admin') {
+                        this.showToast("Security Warning: Assigning 'admin' role grants full administrative access!", 'warning');
+                    }
+                }
+                this.editRolesInput = currentRoles.join(',');
+            },
+
+            async submitUpdateRoles() {
+                if (!this.activeUser) return;
+                this.saving = true;
+                try {
+                    const formData = new FormData();
+                    formData.append('id', this.activeUser.id);
+                    formData.append('roles', this.editRolesInput);
+                    formData.append('__RequestVerificationToken', this.getVerificationToken());
+
+                    const res = await fetch('/Account/Users/UpdateRoles', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.showToast(data.message, 'success');
+                        $('#editRolesModal').modal('hide');
+                        await this.loadUsers();
+                    } else {
+                        this.showToast(data.message || 'Failed to update roles', 'danger');
+                    }
+                } catch (e) {
+                    this.showToast('Error updating roles', 'danger');
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            async toggleStatus(user) {
+                try {
+                    const formData = new FormData();
+                    formData.append('id', user.id);
+                    formData.append('__RequestVerificationToken', this.getVerificationToken());
+
+                    const res = await fetch('/Account/Users/ToggleStatus', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        user.isActive = data.isActive;
+                        this.showToast(data.message, 'success');
+                    } else {
+                        this.showToast(data.message || 'Action failed', 'danger');
+                    }
+                } catch (e) {
+                    this.showToast('Error toggling status', 'danger');
+                }
+            },
+
+            openResetPasswordModal(user) {
+                this.activeUser = user;
+                this.newPassword = '';
+                this.showNewPassword = false;
+                $('#resetPasswordModal').modal('show');
+            },
+
+            async submitResetPassword() {
+                if (!this.activeUser || !this.newPassword) return;
+                this.saving = true;
+                try {
+                    const formData = new FormData();
+                    formData.append('id', this.activeUser.id);
+                    formData.append('newPassword', this.newPassword);
+                    formData.append('__RequestVerificationToken', this.getVerificationToken());
+
+                    const res = await fetch('/Account/Users/ResetPassword', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.showToast(data.message, 'success');
+                        $('#resetPasswordModal').modal('hide');
+                    } else {
+                        this.showToast(data.message || 'Failed to reset password', 'danger');
+                    }
+                } catch (e) {
+                    this.showToast('Error resetting password', 'danger');
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            confirmDeleteUser(user) {
+                bootbox.confirm({
+                    title: '<span class="text-danger"><i class="fas fa-exclamation-triangle mr-2"></i>Delete User Account</span>',
+                    message: `Are you sure you want to delete account <strong>${user.userName}</strong>? This action cannot be undone.`,
+                    buttons: {
+                        cancel: { label: 'Cancel', className: 'btn-secondary' },
+                        confirm: { label: 'Delete Account', className: 'btn-danger' }
+                    },
+                    callback: async (result) => {
+                        if (result) {
+                            try {
+                                const formData = new FormData();
+                                formData.append('id', user.id);
+                                formData.append('__RequestVerificationToken', this.getVerificationToken());
+
+                                const res = await fetch('/Account/Users/Delete', { method: 'POST', body: formData });
+                                const data = await res.json();
+                                if (data.success) {
+                                    this.showToast(data.message, 'success');
+                                    await this.loadUsers();
+                                } else {
+                                    this.showToast(data.message || 'Deletion failed', 'danger');
+                                }
+                            } catch (e) {
+                                this.showToast('Error deleting user', 'danger');
+                            }
+                        }
+                    }
+                });
+            }
+        };
+
+        createApp(app).mount("#userApp");
+    </script>
+}
