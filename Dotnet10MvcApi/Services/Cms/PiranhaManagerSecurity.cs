@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Piranha.Manager.LocalAuth;
 
-namespace Dotnet10MvcApi.Services
+namespace Dotnet10MvcApi.Services.Cms
 {
     /// <summary>
     /// Bridges the Piranha Manager LocalAuth security interface to our existing
