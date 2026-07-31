@@ -12,7 +12,7 @@
     @if (TempData["alert"] != null)
     {
         <script>
-            alert('@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["alert"].ToString()))');
+            alert('@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["alert"]?.ToString()))');
         </script>
     }
 
@@ -117,7 +117,7 @@
 
     <div id="footer-flush-bottom-wrap">
         <div id="footer-flush-bottom-main" class="container clear-top body-content">
-            @if ((ViewData.ModelState[""] != null && ViewData.ModelState[""].Errors.Count > 0) || TempData["alertcard"] != null)
+            @if ((ViewData.ModelState[""] != null && (ViewData.ModelState[""]?.Errors.Count ?? 0) > 0) || TempData["alertcard"] != null)
             {
                 <div class="alert alert-warning alert-dismissible fade show" role="alert">
                     @TempData["alertcard"]
@@ -143,7 +143,7 @@
     @if (TempData["alertbox"] != null)
     {
         <script>
-            bootbox.alert('@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["alertbox"].ToString()))');
+            bootbox.alert('@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["alertbox"]?.ToString()))');
         </script>
     }
 

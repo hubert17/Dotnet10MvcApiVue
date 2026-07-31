@@ -51,7 +51,7 @@
     async Task OnLogin()
     {
         isSubmitting = true;
-        if (await Auth.SignInAsync(Credential.Username, Credential.Password, ReturnUrl))
+        if (await Auth.SignInAsync(Credential!.Username!, Credential.Password!, ReturnUrl))
         {
             AuthProvider.Notify();
             if (Credential.Username.Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase) &&

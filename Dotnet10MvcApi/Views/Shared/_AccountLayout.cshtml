@@ -12,7 +12,7 @@
     @if (TempData["alert"] != null)
     {
         <script>
-            alert('@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["alert"].ToString()))');
+            alert('@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["alert"]?.ToString()))');
         </script>
     }
 
@@ -67,7 +67,7 @@
     @if (TempData["alertbox"] != null)
     {
         <script>
-            bootbox.alert('@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["alertbox"].ToString()))');
+            bootbox.alert('@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["alertbox"]?.ToString()))');
         </script>
     }
 
