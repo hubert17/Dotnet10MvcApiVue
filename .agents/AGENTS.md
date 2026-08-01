@@ -16,6 +16,9 @@ These instructions govern all future modifications, tests, and task executions p
 *   **Debug & Helper Script (`run-debug.bat`):** The project includes `Dotnet10MvcApi/run-debug.bat` to silently launch the application under Development mode:
     *   **Standard Run:** `.\Dotnet10MvcApi\run-debug.bat`
     *   **Agent Run (Low Verbosity):** `.\Dotnet10MvcApi\run-debug.bat --agent` (or `/agent`), which automatically sets `ASPNETCORE_ENVIRONMENT=Development` and executes `dotnet run --project . --verbosity quiet`.
+*   **HTTPS Dev Certificate Initialization Rule:**
+    *   **Rule:** For non-Visual Studio environments or fresh machine setups, AI agents must silently ensure the local ASP.NET Core HTTPS developer certificate is generated and trusted (`dotnet dev-certs https --trust`) prior to initial application execution.
+    *   **Rationale:** Guarantees smooth HTTPS execution and clean SSL handshakes on `https://localhost:7031` without certificate warnings across all browsers and AI subagent tools.
 *   **App Execution & Clickable URLs Rule:**
     *   **Paradigm-Specific Clickable Links:** Whenever the application has been debugged and launched successfully, include clickable Markdown links strictly for the main URL of the specific paradigm currently being worked on or debugged (e.g. [https://localhost:7031/app](https://localhost:7031/app) for Vue SPA, [https://localhost:7031/home](https://localhost:7031/home) for Razor MVC, [https://localhost:7031/manager](https://localhost:7031/manager) for Piranha CMS, or [https://localhost:7031/scalar/v1](https://localhost:7031/scalar/v1) for REST APIs), rather than listing sub-pages or all application URLs indiscriminately.
     *   **No Unsolicited Launching:** If you are not actively debugging a runtime issue, do **not** launch the application right away. Instead, offer to run/launch the app for the user and ask for their confirmation first.
