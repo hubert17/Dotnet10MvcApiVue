@@ -14,8 +14,8 @@ A state-of-the-art **ASP.NET Core .NET 10.0** application hosting **6 distinct w
 This platform demonstrates how to host multiple frontend paradigms inside a single ASP.NET Core process without node build servers or microservice overhead.
 
 ```text
-                                  ┌── GET / ───────────────► Static Landing Page (wwwroot/index.html)
-                                  ├── GET /home ───────────► ASP.NET Core MVC (SSR + Petite-Vue)
+                                  ┌── GET / ───────────────► Static Landing Page / Home Page (wwwroot/index.html)
+                                  ├── GET /portal ─────────► ASP.NET Core MVC Portal (SSR + Petite-Vue)
                                   ├── GET /app ────────────► Vue 2.x SPA (Zero-Build ES Modules)
 ASP.NET Core .NET 10 Monolith ────┼── GET /blazor ─────────► Blazor Server SPA (MudBlazor + SignalR)
                                   ├── GET /blogs, /articles► Piranha CMS v12 Editorial Engine
@@ -26,8 +26,8 @@ ASP.NET Core .NET 10 Monolith ────┼── GET /blazor ─────�
 
 | Paradigm | Route Prefix | Primary Tech Stack | Best Used For (When to Use) | Avoid For (When NOT to Use) |
 | :--- | :--- | :--- | :--- | :--- |
-| **Static Portal** | `GET /` | HTML5 / CSS3 / Glassmorphism | Sub-millisecond marketing portals, documentation hubs, zero-latency initial entries. | Dynamic stateful pages requiring database binding or auth. |
-| **MVC (SSR)** | `GET /home` | Razor Views + Petite-Vue | SEO-critical public web portals, e-commerce, transactional form workflows. | Desktop-grade SPAs requiring continuous fluid UI transitions. |
+| **Landing Page / Home Page** | `GET /` | HTML5 / CSS3 / Glassmorphism | Sub-millisecond landing page, documentation hubs, zero-latency initial entries. | Dynamic stateful pages requiring database binding or auth. |
+| **MVC Portal** | `GET /portal` | Razor Views + Petite-Vue | SEO-critical public web portals, e-commerce, transactional form workflows. | Desktop-grade SPAs requiring continuous fluid UI transitions. |
 | **Vue 2 SPA** | `GET /app` | ES Modules + Vuetify + Vuex | High-traffic, high-concurrency client dashboards with zero node build overhead. | Content-heavy pages dependent on public web search crawlers. |
 | **Blazor Server** | `GET /blazor` | C# + MudBlazor + SignalR | Internal backoffice applications, admin tools, and intranet SPAs using full C# logic. | Public sites with tens of thousands of concurrent WebSocket circuits. |
 | **Piranha CMS** | `GET /blogs`, `/articles` | Piranha CMS v12 + SQLite | Editorial blogs, news releases, tech articles, and content managed by non-devs. | Custom transactional business forms or operational APIs. |
@@ -37,13 +37,14 @@ ASP.NET Core .NET 10 Monolith ────┼── GET /blazor ─────�
 
 ## 🚀 Architectural & Engineering Highlights
 
-### 1. Dynamic Blazor Route Prefixing & Sub-Path Rewriting
-*   **Configurable Prefix:** Blazor Server is configured via `appsettings.json` (`BlazorSettings:RoutePrefix`). Changing `"blazor"` to `"app2"`, `"portal"`, etc. dynamically updates route paths, challenge redirects, and circuit initialization.
+### 1. Dynamic Route & Options Configuration (BlazorSettings & MvcSettings)
+*   **Configurable Blazor Prefix & Branding:** Blazor Server is configured via `appsettings.json` (`BlazorSettings:RoutePrefix` and `BlazorSettings:AppName`). Changing `"blazor"` to `"app2"`, `"portal"`, etc. dynamically updates route paths, challenge redirects, and layout headers.
+*   **Configurable MVC Portal & Application Metadata:** Razor MVC is configured via `appsettings.json` (`MvcSettings:HomeRoute`, `MvcSettings:AppName`, and `MvcSettings:AppDescription`). Setting `HomeRoute` (e.g. `"portal"`) dynamically maps the portal route to `HomeController.Index()`, while `MvcOptions` injects `AppName` and `AppDescription` into layout titles and OpenGraph meta tags.
 *   **Middleware Pipeline Sequencing:** Sub-path rewriting runs **before** `app.UseStaticFiles()`, allowing static web assets (like `_content/MudBlazor/...`) under sub-paths to return `HTTP 200 OK`.
 *   **Root Protection:** `app.UseDefaultFiles()` is scoped via `app.UseWhen(ctx => string.IsNullOrEmpty(ctx.Request.PathBase))` so `wwwroot/index.html` is served exclusively on root domain requests (`/`) without intercepting Blazor sub-paths (`/app2`).
 
 ### 2. Unified Hybrid Authentication & Circuit State Preservation
-*   **Unified Cookie Scheme:** Shared Cookie authentication (`.AspNetCore.Cookies` configured with `options.Cookie.Path = "/"`) grants single sign-on across MVC Razor views (`/home`) and Blazor Server (`/blazor`).
+*   **Unified Cookie Scheme:** Shared Cookie authentication (`.AspNetCore.Cookies` configured with `options.Cookie.Path = "/"`) grants single sign-on across MVC Razor views (`/portal` or `/home`) and Blazor Server (`/blazor`).
 *   **SignalR Circuit Auth Preservation:** `ServerCookieAuthService` captures the HTTP GET `HttpContext.User` during initial connection and preserves the `ClaimsPrincipal` across SignalR WebSocket DI circuit scopes where `IHttpContextAccessor` is null.
 *   **Static SSR Auth Routes:** Blazor `/login` and `/logout` pages render in Static SSR mode (`RenderMode = null`) to ensure HTTP `Set-Cookie` headers are properly dispatched to browsers.
 *   **Dual Authentication Pipeline:** Controller APIs (`/api/...`) use JWT Bearer Security (`[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]`) with refresh token revocation.
@@ -60,6 +61,7 @@ ASP.NET Core .NET 10 Monolith ────┼── GET /blazor ─────�
 ### 5. Multi-Paradigm Real-Time SignalR Messaging (`/chathub`)
 *   **Shared Real-Time Infrastructure:** Central ASP.NET Core SignalR `ChatHub` at `/chathub` defined in `Services/Notifications/ChatHub.cs`.
 *   **Cross-Paradigm Synchronization:** Demonstrates real-time direct messaging across 3 frontend paradigms simultaneously:
+    *   **Razor MVC Portal (`/portal/chat`)**: Instagram/X DM-style UI built with HTML5 + Bootstrap 4, powered by `petite-vue` reactivity and `@microsoft/signalr` JS.
     *   **Razor MVC (`/home/chat`)**: Instagram/X DM-style UI built with HTML5 + Bootstrap 4, powered by `petite-vue` reactivity and `@microsoft/signalr` JS.
     *   **Vue 2.x SPA (`/app/#/chat`)**: Vuetify-based DM interface in `chat.vue.js` using `@microsoft/signalr` JS.
     *   **Blazor Server (`/blazor/chat`)**: MudBlazor interactive component in `Chat.razor` using C# `Microsoft.AspNetCore.SignalR.Client` `HubConnection`.
@@ -141,14 +143,11 @@ Once the application starts, access the 6 web application paradigms at the follo
 
 | Application Paradigm | Route | Description / Access Credentials |
 | :--- | :--- | :--- |
-| **Static Glassmorphic Landing** | `https://localhost:7031/` | Static Web Root landing page (`wwwroot/index.html`). |
+| **Static Landing / Home Page** | `https://localhost:7031/` | Static Web Root landing page (`wwwroot/index.html`). |
 | **Vue 2.x SPA (`/app`)** | `https://localhost:7031/app` | Zero-build, native ES module Single Page Application. |
-| **Vue 2.x Real-Time Chat** | `https://localhost:7031/app/#/chat` | Real-Time DM interface in Vue 2 SPA. |
-| **Razor MVC (`/home`)** | `https://localhost:7031/home` | Server-rendered Razor views with `petite-vue` reactivity. |
+| **Razor MVC Portal (`/portal`)** | `https://localhost:7031/portal` | Server-rendered Razor views with `petite-vue` reactivity. |
 | **MVC User Management** | `https://localhost:7031/Account/Users` | User administration portal (MVC exclusive, Admin only). |
-| **Razor MVC Real-Time Chat** | `https://localhost:7031/home/chat` | Instagram DM-style real-time chat with `petite-vue` + SignalR. |
 | **Blazor Server (`/blazor`)** | `https://localhost:7031/blazor` | Interactive Blazor Server with MudBlazor components. |
-| **Blazor Real-Time Chat** | `https://localhost:7031/blazor/chat` | MudBlazor SignalR DM component. |
 | **Piranha CMS Public** | `https://localhost:7031/blogs` | Editorial blog posts & technical articles (`/articles`). |
 | **Piranha CMS Manager** | `https://localhost:7031/manager` | Admin management portal (**Login:** `admin` / `admin`). |
 | **REST Web API Scalar Docs** | `https://localhost:7031/scalar/v1` | Interactive OpenAPI Scalar playground & `/swagger` redirect. |
@@ -220,7 +219,7 @@ Dotnet10MvcApiVue/
 │   │   └── index.html                   # Multi-Paradigm Glassmorphic Landing Portal
 │   ├── Program.cs                       # Middleware Pipeline & Service Registration
 │   ├── run-debug.bat                    # x64 Architecture Launcher Script
-│   └── appsettings.json                 # Connection Strings & BlazorSettings
+│   └── appsettings.json                 # Connection Strings, MvcSettings & BlazorSettings
 └── README.md                            # Documentation
 ```
 
@@ -243,8 +242,8 @@ dotnet build Dotnet10MvcApi/Dotnet10MvcApi.csproj
 ```
 
 ### Key Endpoints
-*   **Static Landing Portal:** [https://localhost:7031/](https://localhost:7031/)
-*   **ASP.NET Core MVC Portal:** [https://localhost:7031/home](https://localhost:7031/home)
+*   **Static Landing / Home Page:** [https://localhost:7031/](https://localhost:7031/)
+*   **ASP.NET Core MVC Portal:** [https://localhost:7031/portal](https://localhost:7031/portal) (or configured `MvcSettings:HomeRoute`)
 *   **Vue 2.x SPA:** [https://localhost:7031/app](https://localhost:7031/app)
 *   **Blazor Server SPA:** [https://localhost:7031/blazor](https://localhost:7031/blazor) (or configured `RoutePrefix`)
 *   **Piranha CMS Blogs:** [https://localhost:7031/blogs](https://localhost:7031/blogs)

@@ -77,9 +77,10 @@
         <MudNavLink Href="https://github.com/hubert17" Icon="@Icons.Material.Outlined.Code">Github</MudNavLink>
         <MudNavLink Href="https://bernardgabon.com" Icon="@Icons.Material.Outlined.Web">BernardGabon.com</MudNavLink>
     </MudNavGroup>
-    <MudDivider Class="mb-4" />
-
-    <MudNavLink OnClick="OnToggleDarkMode" Icon="@(IsDarkMode ? Icons.Material.Filled.WbSunny : Icons.Material.Filled.Brightness3)">Switch Dark Mode</MudNavLink>
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        <MudDivider Class="mb-4" />
+        <MudNavLink OnClick="OnToggleDarkMode" Icon="@(IsDarkMode ? Icons.Material.Filled.WbSunny : Icons.Material.Filled.Brightness3)">Switch Dark Mode</MudNavLink>
+    </MudHidden>
 </MudNavMenu>
 
 @code {

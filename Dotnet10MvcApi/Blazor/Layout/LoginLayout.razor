@@ -2,6 +2,7 @@
 @using System.Text.Json
 
 @inject HttpClient HttpClient
+@inject BlazorOptions BlazorOptions
 
 <MyMudThemeProvider IsDarkMode="_isDarkMode" />
 <MyMudProviders />
@@ -20,7 +21,7 @@
 <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center" Style="height: 100vh;">
     <div class="d-flex flex-column mud-width-full">
         <MudAppBar Fixed="false">
-            <MudText Typo="Typo.h5" Class="ml-n2">Dotnet10 Blazor</MudText>
+            <MudText Typo="Typo.h5" Class="ml-n2">@BlazorOptions.AppName</MudText>
             <MudSpacer />
             <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" Class="mr-n4" Href="/blazor" />
         </MudAppBar>
