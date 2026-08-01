@@ -72,6 +72,13 @@ namespace Dotnet10MvcApi.Services
             return null;
         }
 
+        public async Task<UserAccount?> GetUserByUsernameAsync(string? userName)
+        {
+            if (string.IsNullOrWhiteSpace(userName)) return null;
+            var clean = userName.Trim().ToLower();
+            return await _db.Users.FirstOrDefaultAsync(u => u.UserName == clean);
+        }
+
         /// <summary>
         /// Synchronous overload for Blazor Server (called from non-async service methods).
         /// </summary>
@@ -122,7 +129,7 @@ namespace Dotnet10MvcApi.Services
         /// Admin role is forbidden unless allowAdmin=true.
         /// </summary>
         public async Task<(Guid? Id, string? Error)> CreateUserAsync(
-            string? userName, string? password, string roles = "", bool allowAdmin = false)
+            string? userName, string? password, string roles = "", bool allowAdmin = false, bool mustChangePassword = false)
         {
             if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
                 return (null, "Username and password are required.");
@@ -159,7 +166,8 @@ namespace Dotnet10MvcApi.Services
                     PasswordSalt = salt,
                     Roles = Regex.Replace(roles ?? string.Empty, @"\s+", ""),
                     CreatedOn = DateTime.Now,
-                    IsActive = true
+                    IsActive = true,
+                    MustChangePassword = mustChangePassword
                 };
 
                 _db.Users.Add(user);
@@ -199,6 +207,7 @@ namespace Dotnet10MvcApi.Services
                 UserAccount.CreatePasswordHash(newPassword, out var hash, out var salt);
                 user.PasswordHash = hash;
                 user.PasswordSalt = salt;
+                user.MustChangePassword = false;
 
                 _db.Entry(user).State = EntityState.Modified;
                 await _db.SaveChangesAsync();
@@ -226,6 +235,7 @@ namespace Dotnet10MvcApi.Services
             UserAccount.CreatePasswordHash(newPassword, out var hash, out var salt);
             user.PasswordHash = hash;
             user.PasswordSalt = salt;
+            user.MustChangePassword = false;
 
             _db.Entry(user).State = EntityState.Modified;
             _db.SaveChanges();
@@ -587,6 +597,105 @@ namespace Dotnet10MvcApi.Services
                 claims.Add(new Claim(ClaimTypes.Role, "user"));
                 claims.Add(new Claim(ClaimTypes.Role, "User"));
             }
+        }
+
+        /// <summary>
+        /// Bulk imports user accounts inside a single database transaction.
+        /// Ignores/skips accounts named 'admin', dev users, and existing database accounts.
+        /// </summary>
+        public async Task<Models.UserImportResultDto> BulkImportUsersAsync(
+            IEnumerable<Models.UserImportRowDto> importRows,
+            string roles = "",
+            bool mustChangePassword = true)
+        {
+            var result = new Models.UserImportResultDto();
+            if (importRows == null)
+            {
+                result.Message = "No import data provided.";
+                return result;
+            }
+
+            var cleanRoles = Regex.Replace(roles ?? string.Empty, @"\s+", "");
+            if (string.IsNullOrWhiteSpace(cleanRoles))
+            {
+                cleanRoles = "user";
+            }
+
+            var existingDbUsernames = new HashSet<string>(
+                await _db.Users.Select(u => u.UserName.ToLower()).ToListAsync(),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            var toAdd = new List<UserAccount>();
+
+            using (var transaction = await _db.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    foreach (var row in importRows)
+                    {
+                        result.TotalProcessed++;
+                        if (string.IsNullOrWhiteSpace(row.Username) || string.IsNullOrWhiteSpace(row.Password))
+                        {
+                            result.FailedCount++;
+                            result.Errors.Add($"Row {result.TotalProcessed}: Username or password missing.");
+                            continue;
+                        }
+
+                        var cleanUsername = row.Username.Trim().ToLower();
+
+                        // 1. Skip admin reserved login name
+                        if (cleanUsername == UserAccount.DEFAULT_ADMIN_LOGIN)
+                        {
+                            result.SkippedCount++;
+                            continue;
+                        }
+
+                        // 2. Skip existing dev users or database users
+                        if (_devUserService.IsDevUser(cleanUsername) || existingDbUsernames.Contains(cleanUsername))
+                        {
+                            result.SkippedCount++;
+                            continue;
+                        }
+
+                        UserAccount.CreatePasswordHash(row.Password, out var hash, out var salt);
+
+                        var newUser = new UserAccount
+                        {
+                            Id = Guid.NewGuid(),
+                            UserName = cleanUsername,
+                            PasswordHash = hash,
+                            PasswordSalt = salt,
+                            Roles = cleanRoles,
+                            CreatedOn = DateTime.Now,
+                            IsActive = true,
+                            MustChangePassword = mustChangePassword
+                        };
+
+                        toAdd.Add(newUser);
+                        existingDbUsernames.Add(cleanUsername);
+                        result.CreatedCount++;
+                    }
+
+                    if (toAdd.Count > 0)
+                    {
+                        await _db.Users.AddRangeAsync(toAdd);
+                        await _db.SaveChangesAsync();
+                    }
+
+                    await transaction.CommitAsync();
+                    result.Success = true;
+                    result.Message = $"Import completed: {result.CreatedCount} created, {result.SkippedCount} skipped, {result.FailedCount} errors.";
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    result.Success = false;
+                    result.Message = $"Bulk import transaction failed: {ex.Message}";
+                }
+            }
+
+            return result;
         }
     }
 }

@@ -23,7 +23,7 @@
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
                     </span>
-                    <input type="text" id="username" name="username" class="form-control" placeholder="name@example.com" required autofocus />
+                    <input type="text" id="username" name="username" class="form-control" placeholder="name@example.com" value="@(ViewBag.Username ?? "")" required autofocus />
                 </div>
             </div>
 
@@ -87,3 +87,15 @@
     };
     createApp(app).mount("#loginApp");
 </script>
+@if (!string.IsNullOrEmpty(ViewBag.Username as string))
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var pwd = document.getElementById("password");
+            if (pwd) {
+                pwd.focus();
+                pwd.select();
+            }
+        });
+    </script>
+}

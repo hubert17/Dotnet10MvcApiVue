@@ -29,6 +29,8 @@ namespace Dotnet10MvcApi.Models.Entities
 
         public bool IsActive { get; set; }
 
+        public bool MustChangePassword { get; set; } = false;
+
         public string Roles { get; set; } = string.Empty; // Comma-separated roles
 
         // Hashing and verification helpers to keep DB compatibility

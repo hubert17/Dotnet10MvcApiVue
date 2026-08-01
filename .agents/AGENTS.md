@@ -65,6 +65,8 @@ These instructions govern all future modifications, tests, and task executions p
         2. **Permanent Active Status:** The primary admin account status cannot be toggled to inactive (`IsActive = false`).
         3. **Deletion Immunity:** The primary admin account cannot be deleted.
         4. **Reserved Username:** `CreateUser` explicitly blocks registering new accounts named `UserAccount.DEFAULT_ADMIN_LOGIN`.
+    *   **Built-in CSV Bulk User Import (`/Account/Users/Import`):**
+        *   **Wizard UI & Password Policy:** Modal dialog in `Views/Account/Users.cshtml` featuring 4-step wizard (Upload, Map & Derive Rules, Dry-Run Review Grid, Summary), real-time preview, and client-side CSV export (`downloadPreviewCsv`). Imported users have `MustChangePassword = true` stored in database (`UserAccount`).
 
 *   **Account Username UI & Input Field Conventions:**
     *   **Rule:** 

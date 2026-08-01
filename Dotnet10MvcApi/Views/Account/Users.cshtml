@@ -88,6 +88,9 @@
             <p class="text-muted mb-0 text-light opacity-75">Manage user accounts, assign security roles, and reset passwords.</p>
         </div>
         <div>
+            <button class="btn btn-outline-light btn-lg shadow-sm mr-2" @@click="openImportModal">
+                <i class="fas fa-file-import mr-2"></i>Import Users (CSV)
+            </button>
             <button class="btn btn-success btn-lg shadow-sm" @@click="openCreateModal">
                 <i class="fas fa-user-plus mr-2"></i>Add New User
             </button>
@@ -310,9 +313,13 @@
                             <i class="fas fa-exclamation-triangle mr-2 text-warning"></i><strong>Security Warning:</strong> Granting the <code>admin</code> role gives full system administration privileges.
                         </div>
                         <div class="form-group mb-0">
-                            <div class="custom-control custom-switch">
+                            <div class="custom-control custom-switch mb-2">
                                 <input type="checkbox" class="custom-control-input" id="newUserActiveSwitch" v-model="newUser.isActive" />
                                 <label class="custom-control-label font-weight-bold" for="newUserActiveSwitch">Active Account</label>
+                            </div>
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="newUserMustChangeSwitch" v-model="newUser.mustChangePassword" />
+                                <label class="custom-control-label text-secondary font-weight-bold" for="newUserMustChangeSwitch">Require Password Change on Next Login</label>
                             </div>
                         </div>
                     </form>
@@ -362,6 +369,313 @@
                     <button type="button" class="btn btn-primary" @@click="submitUpdateRoles" :disabled="saving">
                         <span v-if="saving" class="spinner-border spinner-border-sm mr-1"></span>
                         Save Roles
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ─── CSV Bulk Import Modal (4-Step Wizard) ─── *@
+    <div class="modal fade" id="importUsersModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-csv mr-2 text-info"></i>Bulk Import Users from CSV
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body p-4">
+                    @* Wizard Steps Header Bar *@
+                    <div class="d-flex justify-content-between mb-4 border-bottom pb-3">
+                        <div class="d-flex align-items-center" :class="importState.step === 1 ? 'text-primary font-weight-bold' : 'text-muted'">
+                            <span class="badge badge-pill mr-2" :class="importState.step === 1 ? 'badge-primary' : 'badge-secondary'">1</span> 1. Upload CSV
+                        </div>
+                        <div class="d-flex align-items-center" :class="importState.step === 2 ? 'text-primary font-weight-bold' : 'text-muted'">
+                            <span class="badge badge-pill mr-2" :class="importState.step === 2 ? 'badge-primary' : 'badge-secondary'">2</span> 2. Map Columns & Rules
+                        </div>
+                        <div class="d-flex align-items-center" :class="importState.step === 3 ? 'text-primary font-weight-bold' : 'text-muted'">
+                            <span class="badge badge-pill mr-2" :class="importState.step === 3 ? 'badge-primary' : 'badge-secondary'">3</span> 3. Dry-Run Review
+                        </div>
+                        <div class="d-flex align-items-center" :class="importState.step === 4 ? 'text-primary font-weight-bold' : 'text-muted'">
+                            <span class="badge badge-pill mr-2" :class="importState.step === 4 ? 'badge-primary' : 'badge-secondary'">4</span> 4. Results
+                        </div>
+                    </div>
+
+                    <div v-if="importState.errorMessage" class="alert alert-danger mb-3">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>{{ importState.errorMessage }}
+                    </div>
+
+                    @* STEP 1: Upload CSV *@
+                    <div v-if="importState.step === 1">
+                        <div class="text-center py-4 border rounded bg-light mb-3">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-info mb-2"></i>
+                            <h5 class="font-weight-bold">Select CSV File</h5>
+                            <p class="text-muted small">Supports any CSV layout (Excel comma-delimited or plain CSV)</p>
+                            <input type="file" id="csvFileInput" class="d-none" accept=".csv,text/csv" @@change="handleCsvFileUpload" />
+                            <button class="btn btn-outline-info font-weight-bold" onclick="document.getElementById('csvFileInput').click()">
+                                <i class="fas fa-folder-open mr-1"></i> Browse Files...
+                            </button>
+                            <div v-if="importState.fileName" class="mt-3 font-weight-bold text-success">
+                                <i class="fas fa-file-csv mr-1"></i> Loaded: {{ importState.fileName }} ({{ importState.rows.length }} data rows detected)
+                            </div>
+                        </div>
+
+                        <div class="custom-control custom-checkbox mb-3" v-if="importState.rawContent">
+                            <input type="checkbox" class="custom-control-input" id="hasHeaderCheckbox" :checked="importState.hasHeader" @@change="toggleHasHeader" />
+                            <label class="custom-control-label font-weight-bold" for="hasHeaderCheckbox">CSV Has Header Row (Row 1 contains column titles)</label>
+                        </div>
+                    </div>
+
+                    @* STEP 2: Smart Auto-Detection & Remap *@
+                    <div v-if="importState.step === 2">
+                        <div class="alert alert-info py-2 px-3 mb-3 small">
+                            <i class="fas fa-magic mr-1"></i><strong>Smart Auto-Detection:</strong> Columns have been pre-selected. Review and remap any field if necessary.
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="font-weight-bold">Identifier Column (Email or Username)</label>
+                                <select class="custom-select" v-model="importState.identifierColumn">
+                                    <option v-for="h in importState.headers" :key="h" :value="h">{{ h }}</option>
+                                </select>
+                                <div class="custom-control custom-checkbox mt-2">
+                                    <input type="checkbox" class="custom-control-input" id="enforceEmailFormat" v-model="importState.enforceEmailFormat" />
+                                    <label class="custom-control-label small" for="enforceEmailFormat">Enforce Email Address Format Validation</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="font-weight-bold">Password Derivation Rule</label>
+                                <select class="custom-select" v-model="importState.passwordStrategy">
+                                    <option value="static">🔒 Uniform Static Password</option>
+                                    <option value="direct">📋 Direct Column Value</option>
+                                    <option value="combination">🔤 Multi-Column Combination (Col A + Col B)</option>
+                                    <option value="email_prefix">📧 Email Prefix (text before @@)</option>
+                                    <option value="custom">⚙️ Custom Pattern / Tokens</option>
+                                </select>
+
+                                @* Static Password Input *@
+                                <div v-if="importState.passwordStrategy === 'static'" class="mt-2">
+                                    <input type="text" class="form-control form-control-sm" v-model="importState.staticPassword" placeholder="Uniform default password" />
+                                </div>
+
+                                @* Direct Column Selector *@
+                                <div v-if="importState.passwordStrategy === 'direct'" class="mt-2">
+                                    <select class="custom-select custom-select-sm" v-model="importState.passwordColumn">
+                                        <option v-for="h in importState.headers" :key="h" :value="h">Source Column: {{ h }}</option>
+                                    </select>
+                                </div>
+
+                                @* Multi-Column Combination Controls *@
+                                <div v-if="importState.passwordStrategy === 'combination'" class="mt-2 card card-body bg-light p-2 small">
+                                    <div class="row">
+                                        <div class="col-6 mb-1">
+                                            <label class="mb-0">Col 1 (First N chars)</label>
+                                            <select class="custom-select custom-select-sm" v-model="importState.passwordCol1">
+                                                <option v-for="h in importState.headers" :key="h" :value="h">{{ h }}</option>
+                                            </select>
+                                            <input type="number" class="form-control form-control-sm mt-1" v-model="importState.passwordCol1Length" placeholder="Chars (e.g. 4)" min="1" max="20" />
+                                        </div>
+                                        <div class="col-6 mb-1">
+                                            <label class="mb-0">Col 2 (Last N chars)</label>
+                                            <select class="custom-select custom-select-sm" v-model="importState.passwordCol2">
+                                                <option v-for="h in importState.headers" :key="h" :value="h">{{ h }}</option>
+                                            </select>
+                                            <input type="number" class="form-control form-control-sm mt-1" v-model="importState.passwordCol2Length" placeholder="Chars (e.g. 4)" min="1" max="20" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @* Custom Pattern Input *@
+                                <div v-if="importState.passwordStrategy === 'custom'" class="mt-2">
+                                    <input type="text" class="form-control form-control-sm" v-model="importState.customPattern" placeholder="e.g. {Col 1}_{Col 2}" />
+                                    <small class="text-muted">Use column names inside curly braces like <code>{ColumnName}</code></small>
+                                </div>
+
+                                @* Prepend / Append & Character Cleaning Options (Only for Direct Column & Multi-Column Combination) *@
+                                <div v-if="importState.passwordStrategy === 'direct' || importState.passwordStrategy === 'combination'" class="mt-2 card card-body bg-light p-2 small border">
+                                    <div class="font-weight-bold text-secondary mb-1">
+                                        <i class="fas fa-magic mr-1"></i>Formatting & Cleaning Options
+                                    </div>
+                                    <div class="row mb-1">
+                                        <div class="col-6">
+                                            <label class="mb-0 text-muted">Prepend Text</label>
+                                            <input type="text" class="form-control form-control-sm" v-model="importState.prependString" placeholder="e.g. Pass#" />
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="mb-0 text-muted">Append Text</label>
+                                            <input type="text" class="form-control form-control-sm" v-model="importState.appendString" placeholder="e.g. !2026" />
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2 mt-1">
+                                        <div class="custom-control custom-checkbox mr-3">
+                                            <input type="checkbox" class="custom-control-input" id="removeHyphensCheck" v-model="importState.removeHyphens" />
+                                            <label class="custom-control-label" for="removeHyphensCheck">Remove <code>-</code></label>
+                                        </div>
+                                        <div class="custom-control custom-checkbox mr-3">
+                                            <input type="checkbox" class="custom-control-input" id="removeSlashesCheck" v-model="importState.removeSlashes" />
+                                            <label class="custom-control-label" for="removeSlashesCheck">Remove <code>/</code></label>
+                                        </div>
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="removeSpacesCheck" v-model="importState.removeSpaces" />
+                                            <label class="custom-control-label" for="removeSpacesCheck">Remove Spaces</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Real-Time Password Live Preview Box *@
+                        <div class="card border-info mb-3">
+                            <div class="card-header bg-info text-white py-1 px-3 small font-weight-bold">
+                                <i class="fas fa-eye mr-1"></i>Real-Time Sample Password Preview
+                            </div>
+                            <div class="card-body p-2 bg-light">
+                                <ul class="mb-0 small list-unstyled">
+                                    <li v-for="(sample, sIdx) in samplePasswordsPreview()" :key="sIdx" class="py-1 border-bottom">
+                                        <span class="text-muted mr-2">Sample {{ sIdx + 1 }}:</span>
+                                        <strong>{{ sample.identifier }}</strong> &rarr; <code class="text-dark font-weight-bold bg-white px-2 py-1 border rounded">{{ sample.password }}</code>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        @* Umbrella Roles & Mandatory Password Change *@
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="font-weight-bold d-block">Umbrella Role Assignment</label>
+                                <input type="text" class="form-control form-control-sm" v-model="importState.roles" placeholder="e.g. user, CmsEditor" />
+                            </div>
+                            <div class="col-md-6 mb-2 d-flex align-items-center">
+                                <div class="custom-control custom-switch mt-3">
+                                    <input type="checkbox" class="custom-control-input" id="importMustChangePassword" v-model="importState.mustChangePassword" />
+                                    <label class="custom-control-label font-weight-bold text-secondary" for="importMustChangePassword">Force Password Change on Next Login</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* STEP 3: Dry-Run Paginated Table *@
+                    <div v-if="importState.step === 3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="small">
+                                <span class="badge badge-success mr-1">{{ getReadyImportCount() }} Ready</span>
+                                <span class="badge badge-warning mr-1">{{ getSkippedImportCount() }} Skipped (Admin/Duplicate)</span>
+                                <span class="badge badge-danger">{{ getInvalidImportCount() }} Invalid</span>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-outline-info font-weight-bold mr-2" @@click="downloadPreviewCsv">
+                                    <i class="fas fa-file-download mr-1"></i>Export CSV
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @@click="importState.showPasswords = !importState.showPasswords">
+                                    <i class="fas" :class="importState.showPasswords ? 'fa-eye-slash' : 'fa-eye'"></i> {{ importState.showPasswords ? 'Hide' : 'Show' }} Passwords
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive border rounded" style="max-height: 380px;">
+                            <table class="table table-sm table-hover mb-0 align-middle">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th style="width: 8%;">Row #</th>
+                                        <th style="width: 30%;">Identifier (Username/Email)</th>
+                                        <th style="width: 25%;">Derived Password</th>
+                                        <th style="width: 17%;">Roles</th>
+                                        <th style="width: 20%;">Validation Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="r in paginatedImportRows()" :key="r.rowNumber" :class="{ 'table-warning': r.status.startsWith('skip'), 'table-danger': r.status.startsWith('invalid') }">
+                                        <td>#{{ r.rowNumber }}</td>
+                                        <td class="font-weight-bold">{{ r.username }}</td>
+                                        <td>
+                                            <code>{{ importState.showPasswords ? r.password : '••••••••' }}</code>
+                                        </td>
+                                        <td><span class="badge badge-secondary">{{ r.roles }}</span></td>
+                                        <td>
+                                            <span class="badge" :class="r.status === 'ready' ? 'badge-success' : (r.status.startsWith('skip') ? 'badge-warning' : 'badge-danger')">
+                                                {{ r.statusMessage }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        @* Page Navigator Controls *@
+                        <div class="d-flex align-items-center justify-content-between mt-3">
+                            <div class="small text-muted">
+                                Page {{ importState.currentPage }} of {{ totalImportPages() }} ({{ importState.parsedRows.length }} total rows)
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary" :disabled="importState.currentPage === 1" @@click="importState.currentPage--">
+                                    <i class="fas fa-chevron-left mr-1"></i> Previous
+                                </button>
+                                <button class="btn btn-outline-secondary" :disabled="importState.currentPage >= totalImportPages()" @@click="importState.currentPage++">
+                                    Next <i class="fas fa-chevron-right ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* STEP 4: Ingestion Summary *@
+                    <div v-if="importState.step === 4" class="text-center py-4">
+                        <div v-if="importState.resultSummary">
+                            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                            <h4 class="font-weight-bold text-success">Bulk Import Execution Complete</h4>
+                            <p class="lead text-dark">{{ importState.resultSummary.message }}</p>
+                            <div class="row justify-content-center my-4">
+                                <div class="col-md-3">
+                                    <div class="card bg-success text-white p-3">
+                                        <div class="h2 mb-0">{{ importState.resultSummary.createdCount }}</div>
+                                        <small class="text-uppercase font-weight-bold">Created</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-warning text-white p-3">
+                                        <div class="h2 mb-0">{{ importState.resultSummary.skippedCount }}</div>
+                                        <small class="text-uppercase font-weight-bold">Skipped</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-danger text-white p-3">
+                                        <div class="h2 mb-0">{{ importState.resultSummary.failedCount }}</div>
+                                        <small class="text-uppercase font-weight-bold">Errors</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-info font-weight-bold mt-2" @@click="downloadPreviewCsv">
+                                <i class="fas fa-file-download mr-1"></i>Download Generated CSV File
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @* Wizard Footer Buttons *@
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    
+                    <button v-if="importState.step === 1" type="button" class="btn btn-primary" :disabled="!importState.rows.length" @@click="importState.step = 2">
+                        Next: Map Columns & Rules <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+
+                    <button v-if="importState.step === 2" type="button" class="btn btn-secondary mr-auto" @@click="importState.step = 1">
+                        <i class="fas fa-arrow-left mr-1"></i> Back
+                    </button>
+                    <button v-if="importState.step === 2" type="button" class="btn btn-info" @@click="validateAndPreparePreview">
+                        Next: Dry-Run Preview <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+
+                    <button v-if="importState.step === 3" type="button" class="btn btn-secondary mr-auto" @@click="importState.step = 2">
+                        <i class="fas fa-arrow-left mr-1"></i> Back
+                    </button>
+                    <button v-if="importState.step === 3" type="button" class="btn btn-success font-weight-bold" @@click="executeBulkImport" :disabled="getReadyImportCount() === 0 || importState.isSubmitting">
+                        <span v-if="importState.isSubmitting" class="spinner-border spinner-border-sm mr-1"></span>
+                        Commit Import ({{ getReadyImportCount() }} Accounts) <i class="fas fa-check-circle ml-1"></i>
                     </button>
                 </div>
             </div>
@@ -440,7 +754,42 @@
                 username: '',
                 password: '',
                 roles: 'user',
-                isActive: true
+                isActive: true,
+                mustChangePassword: false
+            },
+
+            // CSV Import State
+            importState: {
+                step: 1,
+                fileName: '',
+                rawContent: '',
+                headers: [],
+                rows: [],
+                hasHeader: true,
+                identifierColumn: '',
+                enforceEmailFormat: true,
+                passwordStrategy: 'static',
+                staticPassword: 'Welcome2026!',
+                passwordColumn: '',
+                passwordCol1: '',
+                passwordCol1Length: 4,
+                passwordCol2: '',
+                passwordCol2Length: 4,
+                customPattern: '',
+                prependString: '',
+                appendString: '',
+                removeHyphens: false,
+                removeSlashes: false,
+                removeSpaces: false,
+                roles: '',
+                mustChangePassword: true,
+                parsedRows: [],
+                currentPage: 1,
+                pageSize: 10,
+                showPasswords: false,
+                isSubmitting: false,
+                resultSummary: null,
+                errorMessage: ''
             },
 
             // Toast state
@@ -533,7 +882,7 @@
             // ─── Modals & Actions ───
 
             openCreateModal() {
-                this.newUser = { username: '', password: '', roles: 'user', isActive: true };
+                this.newUser = { username: '', password: '', roles: 'user', isActive: true, mustChangePassword: false };
                 $('#createUserModal').modal('show');
             },
 
@@ -573,6 +922,7 @@
                     formData.append('password', this.newUser.password);
                     formData.append('roles', rolesStr);
                     formData.append('isActive', this.newUser.isActive);
+                    formData.append('mustChangePassword', this.newUser.mustChangePassword);
                     formData.append('__RequestVerificationToken', this.getVerificationToken());
 
                     const res = await fetch('/Account/Users/Create', { method: 'POST', body: formData });
@@ -589,6 +939,369 @@
                 } finally {
                     this.saving = false;
                 }
+            },
+
+            // ─── CSV Bulk Import Logic ───
+
+            openImportModal() {
+                this.importState = {
+                    step: 1,
+                    fileName: '',
+                    rawContent: '',
+                    headers: [],
+                    rows: [],
+                    hasHeader: true,
+                    identifierColumn: '',
+                    enforceEmailFormat: true,
+                    passwordStrategy: 'static',
+                    staticPassword: 'Welcome2026!',
+                    passwordColumn: '',
+                    passwordCol1: '',
+                    passwordCol1Length: 4,
+                    passwordCol2: '',
+                    passwordCol2Length: 4,
+                    customPattern: '',
+                    prependString: '',
+                    appendString: '',
+                    removeHyphens: false,
+                    removeSlashes: false,
+                    removeSpaces: false,
+                    roles: '',
+                    mustChangePassword: true,
+                    parsedRows: [],
+                    currentPage: 1,
+                    pageSize: 10,
+                    showPasswords: false,
+                    isSubmitting: false,
+                    resultSummary: null,
+                    errorMessage: ''
+                };
+                $('#importUsersModal').modal('show');
+            },
+
+            handleCsvFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                this.importState.fileName = file.name;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.importState.rawContent = e.target.result;
+                    this.parseRawCsv();
+                };
+                reader.readAsText(file);
+            },
+
+            parseRawCsv() {
+                const text = this.importState.rawContent;
+                if (!text || !text.trim()) {
+                    this.importState.errorMessage = 'The uploaded CSV file is empty.';
+                    return;
+                }
+
+                const lines = text.split(/\r\n|\n|\r/).filter(l => l.trim().length > 0);
+                if (lines.length === 0) {
+                    this.importState.errorMessage = 'No rows found in CSV.';
+                    return;
+                }
+
+                const parseCsvLine = (line) => {
+                    const result = [];
+                    let current = '';
+                    let inQuotes = false;
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        if (char === '"') {
+                            if (inQuotes && line[i + 1] === '"') {
+                                current += '"';
+                                i++;
+                            } else {
+                                inQuotes = !inQuotes;
+                            }
+                        } else if (char === ',' && !inQuotes) {
+                            result.push(current.trim());
+                            current = '';
+                        } else {
+                            current += char;
+                        }
+                    }
+                    result.push(current.trim());
+                    return result;
+                };
+
+                const allParsedLines = lines.map(parseCsvLine);
+                const expectedColCount = allParsedLines[0].length;
+
+                const inconsistentRows = allParsedLines.filter(r => r.length !== expectedColCount);
+                if (inconsistentRows.length > allParsedLines.length * 0.3) {
+                    this.importState.errorMessage = 'Import Discarded: The CSV file has chaotic or inconsistent column structures.';
+                    return;
+                }
+
+                this.importState.errorMessage = '';
+
+                if (this.importState.hasHeader) {
+                    this.importState.headers = allParsedLines[0];
+                    this.importState.rows = allParsedLines.slice(1);
+                } else {
+                    this.importState.headers = Array.from({ length: expectedColCount }, (_, i) => `Column ${i + 1}`);
+                    this.importState.rows = allParsedLines;
+                }
+
+                this.smartAutoDetectColumns();
+            },
+
+            toggleHasHeader() {
+                this.importState.hasHeader = !this.importState.hasHeader;
+                if (this.importState.rawContent) {
+                    this.parseRawCsv();
+                }
+            },
+
+            smartAutoDetectColumns() {
+                const headers = this.importState.headers;
+                const rows = this.importState.rows;
+
+                let bestIdCol = '';
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+
+                const idKeywords = ['email', 'e-mail', 'mail', 'username', 'user', 'account', 'id'];
+                for (const kw of idKeywords) {
+                    const match = headers.find(h => h.toLowerCase().includes(kw));
+                    if (match) {
+                        bestIdCol = match;
+                        break;
+                    }
+                }
+
+                if (!bestIdCol && rows.length > 0) {
+                    for (let colIdx = 0; colIdx < headers.length; colIdx++) {
+                        if (rows.slice(0, 5).some(r => r[colIdx] && emailRegex.test(r[colIdx]))) {
+                            bestIdCol = headers[colIdx];
+                            break;
+                        }
+                    }
+                }
+
+                this.importState.identifierColumn = bestIdCol || headers[0] || '';
+                this.importState.passwordColumn = headers[1] || headers[0] || '';
+                this.importState.passwordCol1 = headers[0] || '';
+                this.importState.passwordCol2 = headers[1] || headers[0] || '';
+            },
+
+            getRowValue(row, colName) {
+                const colIdx = this.importState.headers.indexOf(colName);
+                if (colIdx === -1 || !row[colIdx]) return '';
+                return row[colIdx];
+            },
+
+            deriveRowPassword(row) {
+                const s = this.importState.passwordStrategy;
+                let rawPwd = '';
+
+                if (s === 'static') {
+                    rawPwd = this.importState.staticPassword || 'Welcome2026!';
+                } else if (s === 'direct') {
+                    rawPwd = this.getRowValue(row, this.importState.passwordColumn) || 'Welcome2026!';
+                } else if (s === 'combination') {
+                    const val1 = this.getRowValue(row, this.importState.passwordCol1);
+                    const val2 = this.getRowValue(row, this.importState.passwordCol2);
+                    const len1 = parseInt(this.importState.passwordCol1Length) || 4;
+                    const len2 = parseInt(this.importState.passwordCol2Length) || 4;
+                    const part1 = val1.substring(0, len1);
+                    const part2 = val2.length >= len2 ? val2.substring(val2.length - len2) : val2;
+                    rawPwd = `${part1}${part2}` || 'Welcome2026!';
+                } else if (s === 'email_prefix') {
+                    const idVal = this.getRowValue(row, this.importState.identifierColumn);
+                    rawPwd = idVal.split('@@')[0] || 'Welcome2026!';
+                } else if (s === 'custom') {
+                    let pat = this.importState.customPattern || '';
+                    if (!pat) {
+                        rawPwd = 'Welcome2026!';
+                    } else {
+                        this.importState.headers.forEach(h => {
+                            const val = this.getRowValue(row, h);
+                            pat = pat.replace(new RegExp(`\\{${h}\\}`, 'g'), val);
+                        });
+                        rawPwd = pat;
+                    }
+                } else {
+                    rawPwd = 'Welcome2026!';
+                }
+
+                if (s === 'direct' || s === 'combination') {
+                    if (this.importState.removeHyphens) {
+                        rawPwd = rawPwd.replace(/-/g, '');
+                    }
+                    if (this.importState.removeSlashes) {
+                        rawPwd = rawPwd.replace(/\//g, '');
+                    }
+                    if (this.importState.removeSpaces) {
+                        rawPwd = rawPwd.replace(/\s+/g, '');
+                    }
+
+                    const prep = this.importState.prependString || '';
+                    const app = this.importState.appendString || '';
+
+                    return `${prep}${rawPwd}${app}` || 'Welcome2026!';
+                }
+
+                return rawPwd || 'Welcome2026!';
+            },
+
+            samplePasswordsPreview() {
+                if (!this.importState.rows || this.importState.rows.length === 0) return [];
+                return this.importState.rows.slice(0, 3).map(r => ({
+                    identifier: this.getRowValue(r, this.importState.identifierColumn) || 'N/A',
+                    password: this.deriveRowPassword(r)
+                }));
+            },
+
+            validateAndPreparePreview() {
+                const idCol = this.importState.identifierColumn;
+                if (!idCol) {
+                    this.importState.errorMessage = 'Please select or map an Identifier (Email/Username) column.';
+                    return;
+                }
+
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                const existingDbUsernames = new Set(this.users.map(u => u.userName.toLowerCase()));
+                const adminName = this.defaultAdminLogin.toLowerCase();
+
+                const parsed = [];
+                const seenInFile = new Set();
+
+                this.importState.rows.forEach((row, idx) => {
+                    const rawId = this.getRowValue(row, idCol);
+                    const password = this.deriveRowPassword(row);
+                    const cleanId = rawId ? rawId.trim().toLowerCase() : '';
+
+                    let status = 'ready';
+                    let statusMessage = 'Ready';
+
+                    if (!cleanId) {
+                        status = 'invalid_empty';
+                        statusMessage = 'Empty Identifier';
+                    } else if (cleanId === adminName) {
+                        status = 'skip_admin';
+                        statusMessage = 'Skip: Primary Admin Reserved';
+                    } else if (this.importState.enforceEmailFormat && !emailRegex.test(cleanId)) {
+                        status = 'invalid_email';
+                        statusMessage = 'Invalid Email Syntax';
+                    } else if (existingDbUsernames.has(cleanId) || seenInFile.has(cleanId)) {
+                        status = 'skip_duplicate';
+                        statusMessage = 'Skip: Duplicate Account';
+                    } else {
+                        seenInFile.add(cleanId);
+                    }
+
+                    parsed.push({
+                        rowNumber: idx + (this.importState.hasHeader ? 2 : 1),
+                        username: cleanId || rawId || 'N/A',
+                        password: password,
+                        roles: this.importState.roles || 'user',
+                        mustChangePassword: this.importState.mustChangePassword,
+                        status: status,
+                        statusMessage: statusMessage
+                    });
+                });
+
+                this.importState.parsedRows = parsed;
+                this.importState.currentPage = 1;
+                this.importState.step = 3;
+            },
+
+            getReadyImportCount() {
+                return this.importState.parsedRows.filter(r => r.status === 'ready').length;
+            },
+
+            getSkippedImportCount() {
+                return this.importState.parsedRows.filter(r => r.status.startsWith('skip')).length;
+            },
+
+            getInvalidImportCount() {
+                return this.importState.parsedRows.filter(r => r.status.startsWith('invalid')).length;
+            },
+
+            paginatedImportRows() {
+                const start = (this.importState.currentPage - 1) * this.importState.pageSize;
+                return this.importState.parsedRows.slice(start, start + this.importState.pageSize);
+            },
+
+            totalImportPages() {
+                return Math.max(1, Math.ceil(this.importState.parsedRows.length / this.importState.pageSize));
+            },
+
+            async executeBulkImport() {
+                const readyRows = this.importState.parsedRows.filter(r => r.status === 'ready').map(r => ({
+                    username: r.username,
+                    password: r.password
+                }));
+
+                if (readyRows.length === 0) {
+                    this.showToast('No valid rows available to import.', 'warning');
+                    return;
+                }
+
+                this.importState.isSubmitting = true;
+                try {
+                    const queryRoles = encodeURIComponent(this.importState.roles || '');
+                    const queryMustChange = this.importState.mustChangePassword ? 'true' : 'false';
+                    const importUrl = `/Account/Users/Import?roles=${queryRoles}&mustChangePassword=${queryMustChange}`;
+
+                    const res = await fetch(importUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-XSRF-TOKEN': this.getVerificationToken(),
+                            'RequestVerificationToken': this.getVerificationToken(),
+                            '__RequestVerificationToken': this.getVerificationToken()
+                        },
+                        body: JSON.stringify(readyRows)
+                    });
+
+                    const data = await res.json();
+                    if (data.success) {
+                        this.importState.resultSummary = data;
+                        this.importState.step = 4;
+                        await this.loadUsers();
+                    } else {
+                        this.showToast(data.message || 'Import failed', 'danger');
+                    }
+                } catch (e) {
+                    this.showToast('Network error executing bulk import', 'danger');
+                } finally {
+                    this.importState.isSubmitting = false;
+                }
+            },
+
+            downloadPreviewCsv() {
+                if (!this.importState.parsedRows || this.importState.parsedRows.length === 0) {
+                    this.showToast('No rows available to export.', 'warning');
+                    return;
+                }
+                const headers = ['Row Number', 'Identifier (Username/Email)', 'Derived Password', 'Roles', 'Validation Status'];
+                const csvLines = [headers.join(',')];
+
+                this.importState.parsedRows.forEach(r => {
+                    const row = [
+                        r.rowNumber,
+                        `"${(r.username || '').replace(/"/g, '""')}"`,
+                        `"${(r.password || '').replace(/"/g, '""')}"`,
+                        `"${(r.roles || '').replace(/"/g, '""')}"`,
+                        `"${(r.statusMessage || '').replace(/"/g, '""')}"`
+                    ];
+                    csvLines.push(row.join(','));
+                });
+
+                const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `generated_users_import_${new Date().toISOString().slice(0, 10)}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
             },
 
             openQuickRoleMenu(user) {

@@ -55,11 +55,19 @@
             ? ReturnUrl
             : BlazorOptions.HomePath;
 
-        if (await Auth.SignInAsync(Credential!.Username!, Credential.Password!, targetUrl))
+        var (success, user) = await Auth.SignInUserAsync(Credential!.Username!, Credential.Password!, targetUrl);
+        if (success)
         {
             AuthProvider.Notify();
-            if (Credential.Username.Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase) &&
-                Credential.Password == UserAccount.DEFAULT_ADMIN_LOGIN)
+            bool isAdmin = (user != null && user.UserName == UserAccount.DEFAULT_ADMIN_LOGIN) ||
+                           (user != null && user.Roles != null && System.Linq.Enumerable.Any(user.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries), r => r.Trim().Equals(UserAccount.DEFAULT_ADMIN_ROLENAME, StringComparison.OrdinalIgnoreCase)));
+
+            if (!isAdmin && user != null && user.MustChangePassword)
+            {
+                Nav.NavigateTo($"change-password?ReturnUrl={Uri.EscapeDataString(targetUrl)}", true);
+            }
+            else if (Credential.Username.Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase) &&
+                     Credential.Password == UserAccount.DEFAULT_ADMIN_LOGIN)
             {
                 Nav.NavigateTo($"change-password?ReturnUrl={Uri.EscapeDataString(targetUrl)}", true);
             }
@@ -70,6 +78,7 @@
         }
         else
         {
+            Credential.Password = "";
             Snack.Clear();
             Snack.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
             Snack.Add("Invalid login credentials. Please try again.", Severity.Error);
