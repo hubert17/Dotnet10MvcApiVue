@@ -304,7 +304,7 @@
                                     <i class="fas" :class="isNewUserRoleSelected(r) ? 'fa-check-circle' : 'fa-circle'"></i> {{ r }}
                                 </span>
                             </div>
-                            <input type="text" class="form-control form-control-sm" v-model="newUser.customRoles" placeholder="Or type comma-separated roles (e.g. admin, editor)" />
+                            <input type="text" class="form-control form-control-sm" v-model="newUser.roles" placeholder="Type or click chips to select roles (e.g. admin, editor)" />
                         </div>
                         <div v-if="isNewUserRoleSelected('admin')" class="alert alert-warning py-2 px-3 mb-3 small border-warning">
                             <i class="fas fa-exclamation-triangle mr-2 text-warning"></i><strong>Security Warning:</strong> Granting the <code>admin</code> role gives full system administration privileges.
@@ -439,8 +439,7 @@
             newUser: {
                 username: '',
                 password: '',
-                selectedRoles: ['user'],
-                customRoles: '',
+                roles: 'user',
                 isActive: true
             },
 
@@ -534,30 +533,28 @@
             // ─── Modals & Actions ───
 
             openCreateModal() {
-                this.newUser = { username: '', password: '', selectedRoles: ['user'], customRoles: '', isActive: true };
+                this.newUser = { username: '', password: '', roles: 'user', isActive: true };
                 $('#createUserModal').modal('show');
             },
 
             isNewUserRoleSelected(role) {
-                const target = role.toLowerCase();
-                if (this.newUser.selectedRoles.some(r => r.toLowerCase() === target)) return true;
-                if (this.newUser.customRoles) {
-                    const custom = this.newUser.customRoles.split(',').map(s => s.trim().toLowerCase());
-                    if (custom.includes(target)) return true;
-                }
-                return false;
+                if (!this.newUser.roles) return false;
+                const currentRoles = this.newUser.roles.split(',').map(s => s.trim().toLowerCase());
+                return currentRoles.includes(role.toLowerCase());
             },
 
             toggleNewUserRole(role) {
-                const idx = this.newUser.selectedRoles.indexOf(role);
-                if (idx > -1) {
-                    this.newUser.selectedRoles.splice(idx, 1);
+                let currentRoles = this.getRolesList(this.newUser.roles);
+                const existsIdx = currentRoles.findIndex(r => r.toLowerCase() === role.toLowerCase());
+                if (existsIdx > -1) {
+                    currentRoles.splice(existsIdx, 1);
                 } else {
-                    this.newUser.selectedRoles.push(role);
+                    currentRoles.push(role);
                     if (role.toLowerCase() === 'admin') {
                         this.showToast("Security Warning: Assigning 'admin' role grants full administrative access!", 'warning');
                     }
                 }
+                this.newUser.roles = currentRoles.join(', ');
             },
 
             async submitCreateUser() {
@@ -566,11 +563,7 @@
                     return;
                 }
 
-                let rolesList = [...this.newUser.selectedRoles];
-                if (this.newUser.customRoles) {
-                    const extra = this.newUser.customRoles.split(',').map(s => s.trim()).filter(s => s);
-                    rolesList = [...rolesList, ...extra];
-                }
+                const rolesList = this.getRolesList(this.newUser.roles);
                 const rolesStr = [...new Set(rolesList)].join(',');
 
                 this.saving = true;
@@ -630,7 +623,7 @@
                         this.showToast("Security Warning: Assigning 'admin' role grants full administrative access!", 'warning');
                     }
                 }
-                this.editRolesInput = currentRoles.join(',');
+                this.editRolesInput = currentRoles.join(', ');
             },
 
             async submitUpdateRoles() {

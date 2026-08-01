@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using AppMvcOptions = Dotnet10MvcApi.Models.MvcOptions;
 using Dotnet10MvcApi.Models.Entities;
 using Dotnet10MvcApi.Services;
 
@@ -13,20 +15,22 @@ namespace Dotnet10MvcApi.Controllers.Mvc
     {
         private readonly UserAccountService _userAccountService;
         private readonly DevUserService _devUserService;
+        private readonly AppMvcOptions _mvcOptions;
 
-        public AccountController(UserAccountService userAccountService, DevUserService devUserService)
+        public AccountController(UserAccountService userAccountService, DevUserService devUserService, IOptions<AppMvcOptions> mvcOptions)
         {
             _userAccountService = userAccountService;
             _devUserService = devUserService;
+            _mvcOptions = mvcOptions.Value;
         }
 
         [AllowAnonymous]
         [HttpGet("/Account/Login")]
         [HttpGet("/login")]
-        public async Task<IActionResult> Login(string returnUrl = "/")
+        public async Task<IActionResult> Login(string? returnUrl = null)
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            ViewBag.ReturnUrl = returnUrl;
+            ViewBag.ReturnUrl = (string.IsNullOrWhiteSpace(returnUrl) || returnUrl == "/") ? null : returnUrl;
             return View();
         }
 
@@ -34,7 +38,7 @@ namespace Dotnet10MvcApi.Controllers.Mvc
         [HttpPost("/Account/Login")]
         [HttpPost("/login")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string username, string password, bool rememberme = false, string returnUrl = "/")
+        public async Task<IActionResult> Login(string username, string password, bool rememberme = false, string? returnUrl = null)
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
@@ -43,6 +47,9 @@ namespace Dotnet10MvcApi.Controllers.Mvc
             }
 
             var cleanUsername = username.Trim().ToLower();
+            string redirectTarget = (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl != "/")
+                ? returnUrl
+                : _mvcOptions.HomePath;
 
             // 1. Primary: Database Authentication
             var user = await _userAccountService.AuthenticateAsync(cleanUsername, password);
@@ -62,12 +69,9 @@ namespace Dotnet10MvcApi.Controllers.Mvc
                     authProperties);
 
                 if (cleanUsername == UserAccount.DEFAULT_ADMIN_LOGIN && password == UserAccount.DEFAULT_ADMIN_LOGIN)
-                    return RedirectToAction("ChangePassword", new { ReturnUrl = returnUrl });
+                    return RedirectToAction("ChangePassword", new { ReturnUrl = redirectTarget });
 
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                    return Redirect(returnUrl);
-
-                return RedirectToAction("Index", "Home");
+                return Redirect(redirectTarget);
             }
 
             // 2. Fallback: DevUsers (appsettings.Development.json)
@@ -87,10 +91,7 @@ namespace Dotnet10MvcApi.Controllers.Mvc
                     new System.Security.Claims.ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                    return Redirect(returnUrl);
-
-                return RedirectToAction("Index", "Home");
+                return Redirect(redirectTarget);
             }
 
             TempData["alert"] = "Invalid username or password";

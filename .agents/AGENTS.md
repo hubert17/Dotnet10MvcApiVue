@@ -66,6 +66,13 @@ These instructions govern all future modifications, tests, and task executions p
         3. **Deletion Immunity:** The primary admin account cannot be deleted.
         4. **Reserved Username:** `CreateUser` explicitly blocks registering new accounts named `UserAccount.DEFAULT_ADMIN_LOGIN`.
 
+*   **Account Username UI & Input Field Conventions:**
+    *   **Rule:** 
+        * Account username in all UI interfaces should be labeled as **"Email"**.
+        * User registration / creation forms must display the label **"Email"** with `<input type="email" />`.
+        * Login forms must be labeled **"Email"**, but use `<input type="text" />` (not enforcing email address validation so fallback accounts like `admin` can still log in).
+    *   **Rationale:** Encourages users to register with recoverable email addresses instead of plain usernames, as almost every user with a smartphone has an accessible Gmail or Apple email address.
+
 ---
 
 ## 📷 GDI+ & Image Processing
