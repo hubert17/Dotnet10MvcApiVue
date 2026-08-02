@@ -122,7 +122,7 @@ namespace Dotnet10MvcApi.Services.Cms
                         var title = GetPropString(root, "title", "Title");
 
                         var api = context.RequestServices.GetRequiredService<IApi>();
-                        Piranha.Models.DynamicPost existingPost = null;
+                        Piranha.Models.DynamicPost? existingPost = null;
 
                         // 1. Lookup by ID
                         if (postId != Guid.Empty)

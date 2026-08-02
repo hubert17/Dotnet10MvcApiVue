@@ -29,7 +29,7 @@
                 @if (hasCategory)
                 {
                     <span class="cms-badge-article mb-3 d-inline-block">
-                        <i class="fa-solid fa-layer-group mr-1"></i> @Model.Category.Title
+                        <i class="fa-solid fa-layer-group mr-1"></i> @Model.Category!.Title
                     </span>
                 }
 
@@ -39,7 +39,7 @@
                 @* 2. Introduction (Overview - Required) *@
                 @if (hasSubtitle)
                 {
-                    <p class="lead text-light mb-4" style="font-size: 1.25rem; line-height: 1.6; opacity: 0.9;">@Model.Subtitle.Value</p>
+                    <p class="lead text-light mb-4" style="font-size: 1.25rem; line-height: 1.6; opacity: 0.9;">@Model.Subtitle!.Value</p>
                 }
 
                 @* Optional Author, Reading Time & Date Metadata Bar *@
@@ -50,18 +50,18 @@
                         {
                             <div class="d-flex align-items-center mr-4">
                                 <div class="avatar-circle mr-2" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4, #3b82f6); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 13px;">
-                                    @(Model.AuthorName.Value.Substring(0, Math.Min(2, Model.AuthorName.Value.Length)).ToUpper())
+                                    @(Model.AuthorName!.Value.Substring(0, Math.Min(2, Model.AuthorName!.Value.Length)).ToUpper())
                                 </div>
-                                <span class="text-white font-weight-medium">@Model.AuthorName.Value</span>
+                                <span class="text-white font-weight-medium">@Model.AuthorName!.Value</span>
                             </div>
                         }
                         @if (hasReadingTime)
                         {
-                            <span class="mr-4"><i class="fa-regular fa-clock mr-1 text-info"></i> @Model.ReadingTime.Value</span>
+                            <span class="mr-4"><i class="fa-regular fa-clock mr-1 text-info"></i> @Model.ReadingTime!.Value</span>
                         }
                         @if (hasDate)
                         {
-                            <span><i class="fa-regular fa-calendar-alt mr-1 text-info"></i> @Model.Published.Value.ToString("MMMM dd, yyyy")</span>
+                            <span><i class="fa-regular fa-calendar-alt mr-1 text-info"></i> @Model.Published!.Value.ToString("MMMM dd, yyyy")</span>
                         }
                     </div>
                 }
@@ -91,7 +91,7 @@
                                 <i class="fa-solid fa-quote-left text-info mr-2"></i> Footnotes & Citations
                             </h5>
                             <div class="text-light small cms-citations-content" style="line-height: 1.7;">
-                                @Html.Raw(Model.Citations.Value)
+                                @Html.Raw(Model.Citations!.Value)
                             </div>
                         </div>
                     }

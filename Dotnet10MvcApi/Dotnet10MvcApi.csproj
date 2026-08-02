@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <NoWarn>$(NoWarn);CA1416;NU1903</NoWarn>
   </PropertyGroup>
 
   <!-- Exclude Vite/Node development files and documentation under wwwroot from Publish Output -->

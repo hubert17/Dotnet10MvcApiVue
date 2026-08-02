@@ -37,7 +37,9 @@ namespace Dotnet10MvcApi.Models.Entities
 
                 if (clearSongTable)
                 {
+#pragma warning disable EF1002 // Dynamic table name identifier interpolation
                     db.Database.ExecuteSqlRaw($"DELETE FROM {songTable}");
+#pragma warning restore EF1002
                 }
 
                 if (!db.Songs.Any())
