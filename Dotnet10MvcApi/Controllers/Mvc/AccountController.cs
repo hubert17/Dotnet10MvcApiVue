@@ -190,5 +190,121 @@ namespace Dotnet10MvcApi.Controllers.Mvc
             TempData["alert"] = $"Account successfully created. Welcome {username}!";
             return RedirectToAction("Login");
         }
+
+        // ─── User Management (Admin Only) ──────────────────────────────────────
+
+        [Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]
+        [HttpGet("/Account/Users")]
+        public IActionResult Users()
+        {
+            return View();
+        }
+
+        [Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]
+        [HttpGet("/Account/Users/List")]
+        public async Task<IActionResult> GetUsersList()
+        {
+            var users = await _userAccountService.GetAllUsersAsync();
+            var list = users.Select(u => new
+            {
+                id = u.Id,
+                userName = u.UserName,
+                roles = u.Roles,
+                isActive = u.IsActive,
+                createdOn = u.CreatedOn.ToString("yyyy-MM-dd HH:mm:ss"),
+                lastLogin = u.LastLogin.HasValue ? u.LastLogin.Value.ToString("yyyy-MM-dd HH:mm:ss") : "Never"
+            }).ToList();
+
+            var availableRoles = new[] { UserAccount.DEFAULT_ADMIN_ROLENAME, "CmsEditor", "CmsWriter", "CmsModerator", "user" };
+
+            return Json(new { success = true, users = list, availableRoles });
+        }
+
+        [Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]
+        [HttpPost("/Account/Users/Create")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateUser([FromForm] string username, [FromForm] string password, [FromForm] string roles, [FromForm] bool isActive = true)
+        {
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            {
+                return Json(new { success = false, message = "Username and password are required." });
+            }
+
+            if (username.Trim().Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(new { success = false, message = $"Username '{UserAccount.DEFAULT_ADMIN_LOGIN}' is reserved for the primary system administrator." });
+            }
+
+            var cleanRole = string.IsNullOrWhiteSpace(roles) ? "user" : roles.Trim().ToLower();
+            var (id, error) = await _userAccountService.CreateUserAsync(username, password, cleanRole, allowAdmin: true);
+
+            if (id == null)
+            {
+                return Json(new { success = false, message = error ?? "Failed to create user." });
+            }
+
+            return Json(new { success = true, message = $"User '{username}' created successfully." });
+        }
+
+        [Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]
+        [HttpPost("/Account/Users/UpdateRoles")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateUserRoles([FromForm] Guid id, [FromForm] string roles)
+        {
+            var (success, error) = await _userAccountService.UpdateUserRolesAsync(id, roles);
+            if (!success)
+            {
+                return Json(new { success = false, message = error ?? "Failed to update roles." });
+            }
+
+            return Json(new { success = true, message = "User roles updated successfully." });
+        }
+
+        [Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]
+        [HttpPost("/Account/Users/ToggleStatus")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleUserStatus([FromForm] Guid id)
+        {
+            var currentAdmin = User.Identity?.Name ?? "";
+            var (success, isActive, error) = await _userAccountService.ToggleUserStatusAsync(id, currentAdmin);
+
+            if (!success)
+            {
+                return Json(new { success = false, message = error ?? "Failed to toggle user status." });
+            }
+
+            var statusStr = isActive ? "activated" : "deactivated";
+            return Json(new { success = true, isActive = isActive, message = $"User successfully {statusStr}." });
+        }
+
+        [Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]
+        [HttpPost("/Account/Users/ResetPassword")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetUserPassword([FromForm] Guid id, [FromForm] string newPassword)
+        {
+            var (success, error) = await _userAccountService.AdminResetPasswordAsync(id, newPassword);
+            if (!success)
+            {
+                return Json(new { success = false, message = error ?? "Failed to reset password." });
+            }
+
+            return Json(new { success = true, message = "Password reset successfully." });
+        }
+
+        [Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]
+        [HttpPost("/Account/Users/Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUser([FromForm] Guid id)
+        {
+            var currentAdmin = User.Identity?.Name ?? "";
+            var (success, error) = await _userAccountService.DeleteUserAsync(id, currentAdmin);
+
+            if (!success)
+            {
+                return Json(new { success = false, message = error ?? "Failed to delete user." });
+            }
+
+            return Json(new { success = true, message = "User account deleted successfully." });
+        }
     }
 }
