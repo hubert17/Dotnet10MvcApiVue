@@ -431,7 +431,7 @@ namespace Dotnet10MvcApi.Controllers.Api
                         Id = Guid.Empty,
                         UserName = devUser.Username,
                         CreatedOn = DateTime.UtcNow,
-                        LastLogin = (DateTime?)DateTime.Now,
+                        LastLogin = (DateTime?)DateTime.UtcNow,
                         IsActive = true,
                         Roles = devUser.Role
                     }

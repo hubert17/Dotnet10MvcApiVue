@@ -7,7 +7,7 @@ namespace Dotnet10MvcApi.Services.Notifications
         public string Sender { get; set; } = string.Empty;
         public string Recipient { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; } = DateTime.Now;
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -25,7 +25,7 @@ namespace Dotnet10MvcApi.Services.Notifications
                 Sender = sender.Trim(),
                 Recipient = string.IsNullOrWhiteSpace(recipient) ? "Everyone" : recipient.Trim(),
                 Message = message.Trim(),
-                Timestamp = DateTime.Now
+                Timestamp = DateTime.UtcNow
             };
 
             // Broadcast message live to all connected clients across all paradigms

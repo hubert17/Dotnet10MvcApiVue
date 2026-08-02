@@ -165,7 +165,7 @@ namespace Dotnet10MvcApi.Services
                     PasswordHash = hash,
                     PasswordSalt = salt,
                     Roles = Regex.Replace(roles ?? string.Empty, @"\s+", ""),
-                    CreatedOn = DateTime.Now,
+                    CreatedOn = DateTime.UtcNow,
                     IsActive = true,
                     MustChangePassword = mustChangePassword
                 };
@@ -667,7 +667,7 @@ namespace Dotnet10MvcApi.Services
                             PasswordHash = hash,
                             PasswordSalt = salt,
                             Roles = cleanRoles,
-                            CreatedOn = DateTime.Now,
+                            CreatedOn = DateTime.UtcNow,
                             IsActive = true,
                             MustChangePassword = mustChangePassword
                         };

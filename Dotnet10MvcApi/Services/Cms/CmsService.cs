@@ -126,7 +126,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     Body = body,
                     Url = url,
                     IsApproved = !requireModeration,
-                    Created = DateTime.Now
+                    Created = DateTime.UtcNow
                 };
                 await _api.Posts.SaveCommentAsync(postId, comment);
                 return comment;

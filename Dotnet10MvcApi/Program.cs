@@ -28,12 +28,19 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IDbContextFactory<Applica
 builder.Services.Configure<Dotnet10MvcApi.Models.MvcOptions>(builder.Configuration.GetSection("MvcSettings"));
 builder.Services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Dotnet10MvcApi.Models.MvcOptions>>().Value);
 
-// 2. Configure JWT Bearer Authentication
-var secret = builder.Configuration["JwtSettings:Secret"] ?? "f848bcae3399961afba711f8ced6fc3c";
+// 2a. Configure JWT Bearer Authentication
+var jwtSecret = builder.Configuration["JwtSettings:Secret"];
+if (string.IsNullOrWhiteSpace(jwtSecret))
+{
+    if (builder.Environment.IsDevelopment())
+        jwtSecret = "f848bcae3399961afba711f8ced6fc3c"; // Dev-only fallback
+    else
+        throw new InvalidOperationException("JwtSettings:Secret is required in non-Development environments. Set it in appsettings.json or environment variables.");
+}
 var issuer = builder.Configuration["JwtSettings:Issuer"] ?? "Dotnet10MvcApi";
 var audience = builder.Configuration["JwtSettings:Audience"] ?? "Dotnet10MvcApi";
 
-// 2. Configure Authentication (Cookie + JWT Bearer)
+// 2b. Configure Authentication (Cookie + JWT Bearer)
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -71,7 +78,7 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = audience,
         ValidateLifetime = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
     };
 });
 

@@ -21,7 +21,7 @@ namespace Dotnet10MvcApi.Services.Notifications
 
         public async Task PushNotificationAsync(BlazorNotification notification)
         {
-            notification.CreatedOn = DateTime.Now;
+            notification.CreatedOn = DateTime.UtcNow;
             _db.BlazorNotifications.Add(notification);
             await _db.SaveChangesAsync();
 

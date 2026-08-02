@@ -48,13 +48,8 @@ namespace Dotnet10MvcApi.Models.Entities
             using (var hmac = new HMACSHA512(passwordSalt))
             {
                 var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-                if (computedHash.Length != passwordHash.Length) return false;
-                for (int i = 0; i < computedHash.Length; i++)
-                {
-                    if (computedHash[i] != passwordHash[i]) return false;
-                }
+                return CryptographicOperations.FixedTimeEquals(computedHash, passwordHash);
             }
-            return true;
         }
     }
 }

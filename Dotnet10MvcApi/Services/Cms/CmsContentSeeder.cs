@@ -32,7 +32,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     blogPage.Slug = "blogs";
                     blogPage.MetaTitle = "Platform Insights & Tech Blog";
                     blogPage.MetaDescription = "Read the latest engineering articles on ASP.NET Core, Vue.js, and Piranha CMS.";
-                    blogPage.Published = DateTime.Now;
+                    blogPage.Published = DateTime.UtcNow;
 
                     await api.Pages.SaveAsync(blogPage);
                     blogPageId = blogPage.Id;
@@ -54,7 +54,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     articlePage.Slug = "articles";
                     articlePage.MetaTitle = "Technical Knowledge Base & Guides";
                     articlePage.MetaDescription = "In-depth technical guides for building enterprise ASP.NET Core applications.";
-                    articlePage.Published = DateTime.Now;
+                    articlePage.Published = DateTime.UtcNow;
 
                     await api.Pages.SaveAsync(articlePage);
                     articlePageId = articlePage.Id;
@@ -81,7 +81,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     post1.Excerpt = "Welcome to our platform engineering blog! Discover how ASP.NET Core .NET 10 hosts 4 web application paradigms simultaneously in a single codebase.";
                     post1.AuthorName = "Bernard Gabon";
                     post1.MetaKeywords = $"createdby:{UserAccount.DEFAULT_ADMIN_LOGIN}";
-                    post1.Published = DateTime.Now.AddDays(-2);
+                    post1.Published = DateTime.UtcNow.AddDays(-2);
 
                     post1.EnableComments = true;
                     post1.RequireModeration.Value = true;
@@ -110,7 +110,7 @@ namespace Dotnet10MvcApi.Services.Cms
                         Email = "jane@example.com",
                         Body = "Great article on multi-paradigm architecture! The unified monolith approach is very clean.",
                         IsApproved = true,
-                        Created = DateTime.Now.AddDays(-1)
+                        Created = DateTime.UtcNow.AddDays(-1)
                     });
 
                     // Seed Blog Post 2
@@ -126,7 +126,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     post2.Excerpt = "Learn how to build lightweight Vue 2.x applications directly in ASP.NET Core without Webpack or Node.js build steps.";
                     post2.AuthorName = "Bernard Gabon";
                     post2.MetaKeywords = $"createdby:{UserAccount.DEFAULT_ADMIN_LOGIN}";
-                    post2.Published = DateTime.Now.AddDays(-1);
+                    post2.Published = DateTime.UtcNow.AddDays(-1);
                     post2.EnableComments = true;
                     post2.RequireModeration.Value = true;
 
@@ -166,7 +166,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     article1.AuthorName = "Bernard Gabon";
                     article1.MetaKeywords = $"createdby:{UserAccount.DEFAULT_ADMIN_LOGIN}";
                     article1.ReadingTime = "5 mins";
-                    article1.Published = DateTime.Now.AddDays(-3);
+                    article1.Published = DateTime.UtcNow.AddDays(-3);
                     article1.EnableComments = false;
                     article1.Citations = "<ol><li>Microsoft Docs: <a href='https://learn.microsoft.com/aspnet/core/security/' target='_blank' class='text-info'>ASP.NET Core Security Guidelines</a></li><li>IETF RFC 7519: <a href='https://datatracker.ietf.org/doc/html/rfc7519' target='_blank' class='text-info'>JSON Web Token Specification</a></li></ol>";
 
@@ -199,7 +199,7 @@ namespace Dotnet10MvcApi.Services.Cms
                     article2.AuthorName = "Bernard Gabon";
                     article2.MetaKeywords = $"createdby:{UserAccount.DEFAULT_ADMIN_LOGIN}";
                     article2.ReadingTime = "7 mins";
-                    article2.Published = DateTime.Now.AddDays(-1);
+                    article2.Published = DateTime.UtcNow.AddDays(-1);
                     article2.EnableComments = false;
                     article2.Citations = "<ol><li>EntityFrameworkCore.Jet Provider Documentation and `#Dual` query translation rules.</li><li>jsDelivr Public CDN asset caching and distribution patterns.</li></ol>";
 

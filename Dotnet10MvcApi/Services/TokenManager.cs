@@ -4,6 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 
@@ -12,15 +13,17 @@ namespace Dotnet10MvcApi.Services
     public class TokenManager
     {
         private readonly IConfiguration _configuration;
+        private readonly IHostEnvironment _env;
 
-        public TokenManager(IConfiguration configuration)
+        public TokenManager(IConfiguration configuration, IHostEnvironment env)
         {
             _configuration = configuration;
+            _env = env;
         }
 
         public string CreateToken(string username, string[]? roles = null, int? expireMinutes = null)
         {
-            var secret = _configuration["JwtSettings:Secret"] ?? "f848bcae3399961afba711f8ced6fc3c";
+            var secret = GetJwtSecret();
             var issuer = _configuration["JwtSettings:Issuer"] ?? "Dotnet10MvcApi";
             var audience = _configuration["JwtSettings:Audience"] ?? "Dotnet10MvcApi";
             var expiry = expireMinutes ?? int.Parse(_configuration["JwtSettings:ExpiryMinutes"] ?? "20");
@@ -60,7 +63,7 @@ namespace Dotnet10MvcApi.Services
 
         public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
         {
-            var secret = _configuration["JwtSettings:Secret"] ?? "f848bcae3399961afba711f8ced6fc3c";
+            var secret = GetJwtSecret();
             
             var tokenValidationParameters = new TokenValidationParameters
             {
@@ -86,6 +89,18 @@ namespace Dotnet10MvcApi.Services
             {
                 return null;
             }
+        }
+
+        private string GetJwtSecret()
+        {
+            var secret = _configuration["JwtSettings:Secret"];
+            if (string.IsNullOrWhiteSpace(secret))
+            {
+                if (_env.IsDevelopment())
+                    return "f848bcae3399961afba711f8ced6fc3c"; // Dev-only fallback
+                throw new InvalidOperationException("JwtSettings:Secret is required in non-Development environments.");
+            }
+            return secret;
         }
     }
 }
