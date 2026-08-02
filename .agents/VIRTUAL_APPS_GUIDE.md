@@ -145,9 +145,36 @@ To prevent virtual apps from colliding with existing monolith components, Piranh
 
 ---
 
-## 🔐 Shared Services & Data Layer
+## 🗄️ Shared Services & Persistence Strategy
 
 Because all virtual apps run in the same ASP.NET Core process:
 1. **Shared Authentication:** JWT Bearer and Cookie authentication are shared natively. Virtual apps can restrict access using `[Authorize(Roles = "App3User")]` or policy checks.
-2. **Shared Database Access:** All virtual apps share EF Core DbContexts (`MyAccessDb` / SQLite CMS) and ADO.NET query extensions.
+2. **Hybrid Database & Schema Architecture:**
+   - **Core Monolith & Integrated Apps:** MVC Razor Views (`/home`), Blazor Server (`/blazor`), Piranha CMS (`/manager`), REST APIs (`/api`), and the primary Vue 2 SPA (`/app`) share `ApplicationDbContext` on the default PostgreSQL schema (`public`).
+   - **Autonomous Sub-Apps (`/app2`, `/app3`):** Standalone, fully independent sub-apps receive dedicated `DbContext` classes (`App2DbContext`). Schema names are **hardcoded within each DbContext's `OnModelCreating`** (e.g. `modelBuilder.HasDefaultSchema("app2")`) to guarantee self-containment. Migrations are managed independently (`dotnet ef migrations add <Name> --context App2DbContext`).
 3. **Unified API Gateway:** Controllers under `/api/...` serve JSON data to Vue 2 SPAs, Razor MVC views (`petite-vue`), and Blazor components seamlessly.
+
+### Sub-App Persistence Matrix
+
+| Sub-App Type | Persistence Model | Target Schema | Migration Command |
+| :--- | :--- | :--- | :--- |
+| **Core Monolith** (`/home`, `/blazor`, `/api`, `/manager`, `/app`) | `ApplicationDbContext` | Default Schema (`public`) | `dotnet ef migrations add <Name> --context ApplicationDbContext` |
+| **Integrated Vue Sub-App** | `ApplicationDbContext` | Default Schema (`public`) | Shares `ApplicationDbContext` migrations |
+| **Autonomous Vue Sub-App** (`/app2`, `/app3`) | Dedicated `App2DbContext` | Hardcoded Schema (`app2`, `app3`) | `dotnet ef migrations add <Name> --context App2DbContext` |
+
+### Autonomous DbContext Schema Pattern (`Data/App2DbContext.cs`)
+```csharp
+public class App2DbContext : DbContext
+{
+    public App2DbContext(DbContextOptions<App2DbContext> options) : base(options) { }
+
+    public DbSet<App2Order> Orders { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        // Hardcoded schema locks this autonomous DbContext to schema 'app2'
+        modelBuilder.HasDefaultSchema("app2");
+    }
+}
+```

@@ -49,7 +49,7 @@ namespace Dotnet10MvcApi.Services
 
             if (user != null && user.IsActive && UserAccount.VerifyPasswordHash(password, user.PasswordSalt, user.PasswordHash))
             {
-                user.LastLogin = DateTime.Now;
+                user.LastLogin = DateTime.UtcNow;
                 _db.Entry(user).State = EntityState.Modified;
                 await _db.SaveChangesAsync();
                 return user;
@@ -65,7 +65,7 @@ namespace Dotnet10MvcApi.Services
                     UserName = devUser.Username,
                     Roles = devUser.Role,
                     IsActive = true,
-                    LastLogin = DateTime.Now
+                    LastLogin = DateTime.UtcNow
                 };
             }
 
@@ -92,7 +92,7 @@ namespace Dotnet10MvcApi.Services
 
             if (user != null && user.IsActive && UserAccount.VerifyPasswordHash(password, user.PasswordSalt, user.PasswordHash))
             {
-                user.LastLogin = DateTime.Now;
+                user.LastLogin = DateTime.UtcNow;
                 _db.Entry(user).State = EntityState.Modified;
                 _db.SaveChanges();
                 return user;
@@ -108,7 +108,7 @@ namespace Dotnet10MvcApi.Services
                     UserName = devUser.Username,
                     Roles = devUser.Role,
                     IsActive = true,
-                    LastLogin = DateTime.Now
+                    LastLogin = DateTime.UtcNow
                 };
             }
 
@@ -270,61 +270,92 @@ namespace Dotnet10MvcApi.Services
             return claims;
         }
 
-        // ─── Admin Seeding ───────────────────────────────────────────────────────
+        // ─── Default Users Seeding ───────────────────────────────────────────────
 
-        public async Task EnsureAdminExistsAsync()
+        public async Task EnsureDefaultUsersExistAsync()
         {
             try
             {
-                var hasAdmin = await _db.Users.AnyAsync(x => x.Roles.Contains(UserAccount.DEFAULT_ADMIN_ROLENAME));
-                if (!hasAdmin)
+                var seedUsers = new[]
                 {
-                    UserAccount.CreatePasswordHash(UserAccount.DEFAULT_ADMIN_LOGIN, out var hash, out var salt);
-                    _db.Users.Add(new UserAccount
+                    (Username: "admin", Password: "admin", Role: "admin")
+                };
+
+                bool addedAny = false;
+                foreach (var (username, password, role) in seedUsers)
+                {
+                    var exists = await _db.Users.AnyAsync(u => u.UserName == username);
+                    if (!exists)
                     {
-                        Id = Guid.NewGuid(),
-                        UserName = UserAccount.DEFAULT_ADMIN_LOGIN,
-                        PasswordHash = hash,
-                        PasswordSalt = salt,
-                        Roles = UserAccount.DEFAULT_ADMIN_ROLENAME,
-                        CreatedOn = DateTime.Now,
-                        IsActive = true
-                    });
+                        UserAccount.CreatePasswordHash(password, out var hash, out var salt);
+                        _db.Users.Add(new UserAccount
+                        {
+                            Id = Guid.NewGuid(),
+                            UserName = username,
+                            PasswordHash = hash,
+                            PasswordSalt = salt,
+                            Roles = role,
+                            CreatedOn = DateTime.UtcNow,
+                            IsActive = true
+                        });
+                        addedAny = true;
+                    }
+                }
+
+                if (addedAny)
+                {
                     await _db.SaveChangesAsync();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"EnsureAdminExistsAsync bypassed/failed: {ex.Message}");
+                Console.WriteLine($"EnsureDefaultUsersExistAsync bypassed/failed: {ex.Message}");
             }
         }
 
-        public void EnsureAdminExists()
+        public void EnsureDefaultUsersExist()
         {
             try
             {
-                var hasAdmin = _db.Users.Any(x => x.Roles.Contains(UserAccount.DEFAULT_ADMIN_ROLENAME));
-                if (!hasAdmin)
+                var seedUsers = new[]
                 {
-                    UserAccount.CreatePasswordHash(UserAccount.DEFAULT_ADMIN_LOGIN, out var hash, out var salt);
-                    _db.Users.Add(new UserAccount
+                    (Username: "admin", Password: "admin", Role: "admin")
+                };
+
+                bool addedAny = false;
+                foreach (var (username, password, role) in seedUsers)
+                {
+                    var exists = _db.Users.Any(u => u.UserName == username);
+                    if (!exists)
                     {
-                        Id = Guid.NewGuid(),
-                        UserName = UserAccount.DEFAULT_ADMIN_LOGIN,
-                        PasswordHash = hash,
-                        PasswordSalt = salt,
-                        Roles = UserAccount.DEFAULT_ADMIN_ROLENAME,
-                        CreatedOn = DateTime.Now,
-                        IsActive = true
-                    });
+                        UserAccount.CreatePasswordHash(password, out var hash, out var salt);
+                        _db.Users.Add(new UserAccount
+                        {
+                            Id = Guid.NewGuid(),
+                            UserName = username,
+                            PasswordHash = hash,
+                            PasswordSalt = salt,
+                            Roles = role,
+                            CreatedOn = DateTime.UtcNow,
+                            IsActive = true
+                        });
+                        addedAny = true;
+                    }
+                }
+
+                if (addedAny)
+                {
                     _db.SaveChanges();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"EnsureAdminExists bypassed/failed: {ex.Message}");
+                Console.WriteLine($"EnsureDefaultUsersExist bypassed/failed: {ex.Message}");
             }
         }
+
+        public Task EnsureAdminExistsAsync() => EnsureDefaultUsersExistAsync();
+        public void EnsureAdminExists() => EnsureDefaultUsersExist();
 
         // ─── Private helpers ─────────────────────────────────────────────────────
 

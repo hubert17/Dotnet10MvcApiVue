@@ -31,7 +31,7 @@ namespace Dotnet10MvcApi.Services.Blazor
 
         public async Task<bool> SignInAsync(string username, string password, string? returnUrl = null)
         {
-            var u = _users.Authenticate(username, password);
+            var u = await _users.AuthenticateAsync(username, password);
             if (u is null) return false;
 
             var claims = UserAccountService.BuildClaims(u);

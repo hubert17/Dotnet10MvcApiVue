@@ -10,33 +10,28 @@ These instructions govern all future modifications, tests, and task executions p
     *   **Rule:** Always silently ensure `ASPNETCORE_ENVIRONMENT` is set to `Development` prior to running or debugging the application:
         ```powershell
         $env:ASPNETCORE_ENVIRONMENT="Development"
-        dotnet run --project Dotnet10MvcApi --arch x64
+        dotnet run --project Dotnet10MvcApi
         ```
     *   **Rationale:** Running under `Development` ensures `appsettings.Development.json` is loaded, providing development JWT secret keys, fallback DevUser accounts (`devadmin`/`admin123`), and enabling Piranha CMS auto-seeding without prompting the user.
-*   **x64 Emulation Constraint:** This application runs on Windows ARM64 but connects to an MS Access database via OLE DB drivers, which are exclusively compiled for x64/x86 architectures.
-    *   **Rule:** Always run, debug, or build the project using the x64 architecture flag:
-        ```powershell
-        dotnet run --arch x64
-        ```
-    *   **Failure Mode:** Running without `--arch x64` results in `assembly not found` or `provider not registered` exceptions during database connection handshakes.
-*   **Debug & Helper Script (`run-debug.bat`):** The project includes `Dotnet10MvcApi/run-debug.bat` to silently launch the application under Development mode with correct architecture:
+*   **Debug & Helper Script (`run-debug.bat`):** The project includes `Dotnet10MvcApi/run-debug.bat` to silently launch the application under Development mode:
     *   **Standard Run:** `.\Dotnet10MvcApi\run-debug.bat`
-    *   **Agent Run (Low Verbosity):** `.\Dotnet10MvcApi\run-debug.bat --agent` (or `/agent`), which automatically sets `ASPNETCORE_ENVIRONMENT=Development` and executes `dotnet run --project . --arch x64 --verbosity quiet`.
+    *   **Agent Run (Low Verbosity):** `.\Dotnet10MvcApi\run-debug.bat --agent` (or `/agent`), which automatically sets `ASPNETCORE_ENVIRONMENT=Development` and executes `dotnet run --project . --verbosity quiet`.
 *   **App Execution & Clickable URLs Rule:**
     *   **Paradigm-Specific Clickable Links:** Whenever the application has been debugged and launched successfully, include clickable Markdown links strictly for the main URL of the specific paradigm currently being worked on or debugged (e.g. [https://localhost:7031/app](https://localhost:7031/app) for Vue SPA, [https://localhost:7031/home](https://localhost:7031/home) for Razor MVC, [https://localhost:7031/manager](https://localhost:7031/manager) for Piranha CMS, or [https://localhost:7031/scalar/v1](https://localhost:7031/scalar/v1) for REST APIs), rather than listing sub-pages or all application URLs indiscriminately.
     *   **No Unsolicited Launching:** If you are not actively debugging a runtime issue, do **not** launch the application right away. Instead, offer to run/launch the app for the user and ask for their confirmation first.
 
 ---
 
-## 🗄️ Database & Queries (MS Access Jet / SQLite / EF Core)
+## 🗄️ Database & Queries (PostgreSQL / SQLite / EF Core)
 
 *   **Database Providers:** 
-    *   Application relational data uses `EntityFrameworkCore.Jet` targeting MS Access (`MyAccessDb.mdb`). Maintain compatibility for easy future shifts to **PostgreSQL**. Do not use MS SQL Server.
+    *   Application relational data uses `Npgsql.EntityFrameworkCore.PostgreSQL` targeting PostgreSQL (`mypgDb` database).
     *   Piranha CMS content data uses `Piranha.Data.EF.SQLite` targeting `App_Data/piranha.db`.
-*   **Scalar Queries (#Dual):** The Jet provider translates LINQ evaluations like `.Any()` into SQL containing `FROM #Dual`. 
-    *   **Rule:** The database must contain a helper table named `[#Dual]` with exactly one row. This table is automatically checked and seeded on startup in `Program.cs`. Do not delete or alter this table.
-*   **Bulk Ingest Seeding:** Row-by-row EF Core change-tracked inserts for thousands of records are too slow for the Jet database engine.
-    *   **Rule:** Seeding of large lists (like the Billboard songs database) must be executed using raw parameterized ADO.NET commands inside a single transaction (refer to `Song.Seed(...)`).
+*   **Sub-App Persistence & Schema Isolation Strategy:**
+    *   **Core Monolith & Integrated Apps:** MVC Razor Views (`/home`), Blazor Server (`/blazor`), Piranha CMS (`/manager`), REST APIs (`/api`), and the primary Vue 2 SPA (`/app`) share `ApplicationDbContext` on the default PostgreSQL schema (`public`).
+    *   **Autonomous Vue Sub-Apps (`/app2`, `/app3`):** Standalone, fully independent sub-apps use dedicated `DbContext` classes (`App2DbContext`). Schema names are **hardcoded within each DbContext** inside `OnModelCreating` (e.g., `modelBuilder.HasDefaultSchema("app2")`) to guarantee strict domain self-containment. Migrations are managed independently (`--context App2DbContext`).
+*   **Bulk Ingest Seeding:**
+    *   **Rule:** Seeding of large lists (like the Billboard songs database) is executed using raw parameterized ADO.NET commands inside a single transaction (refer to `Song.Seed(...)`).
 
 ---
 
@@ -122,16 +117,24 @@ These instructions govern all future modifications, tests, and task executions p
     *   **CMS** or **Piranha**: Piranha CMS v12 content engine serving public blogs (`/blogs`), technical articles (`/articles`), custom blocks (`HeroBlock`), and the admin manager portal (`/manager`).
 
 *   **Feature Architecture Analysis & Paradigm Selection Rule:**
-    *   Whenever the user / System Architect requests to add or implement a new feature in this multi-paradigm monolith:
-        1. **Analyze Requirements & Recommend Paradigm:** The AI agent must carefully analyze the architectural requirements against the project's paradigms:
-           - **Static Web Root (`/`)**: Static landing pages or marketing content.
-           - **Vue 2 SPA (`/app`)**: Dynamic, zero-build single-page applications for high-concurrency client-side app workflows.
-           - **Razor MVC (`/home`)**: Server-rendered HTML forms, traditional page-based workflows, or admin views with `petite-vue` reactivity.
-           - **Blazor Server (`/blazor`)**: Rich C# interactive backoffice workflows, MudBlazor UI dashboards, and real-time SignalR components.
-           - **REST Web APIs (`/api/...`)**: Controller-based JSON endpoints with JWT Bearer authentication.
-           - **Piranha CMS (`/blogs`, `/articles`, `/manager`)**: Editorial blog posts, articles, CMS block content, and admin management.
-        2. **Mindful Architectural Discussion:** Discuss the proposed paradigm recommendation mindfully with the System Architect before proceeding with code implementation.
-        3. **Autonomous AI Decision-Making:** If the Architect is unsure, defers the choice, or has limited knowledge of the project's paradigms, the AI agent must make an informed, appropriate architectural decision autonomously and explain the rationale clearly before building.
+    *   Whenever the user / System Architect requests to add or implement a new feature or application in this monolith:
+        1. **Translate Business Request to Paradigm:** The AI agent acts as the Lead Architect and translates plain-English business requirements to the optimal technical paradigm:
+           
+           | User / Architect Request | Optimal Paradigm | Location / Path | Database Strategy |
+           | :--- | :--- | :--- | :--- |
+           | *"Add a marketing page / product showcase"* | **Static Web Root** | `wwwroot/index.html` | No database required |
+           | *"Add a blog, article, or content publishing section"* | **Piranha CMS** | `/blogs`, `/articles`, `/manager` | `Piranha.Data.EF.SQLite` (`piranha.db`) |
+           | *"Add server-rendered forms, admin CRUD, or SEO pages"* | **Razor MVC (SSR)** | `/home`, `Controllers/`, `Views/` | Shared `ApplicationDbContext` (`public`) |
+           | *"Add interactive dashboards, live widgets, or backoffice UI"* | **Blazor Server** | `/blazor`, `Blazor/Pages/` | Shared `ApplicationDbContext` (`IDbContextFactory`) |
+           | *"Add JSON REST endpoints or mobile API backend"* | **REST Web API** | `/api/...`, `Controllers/Api/` | Shared `ApplicationDbContext` (`public`) |
+           | *"Add an integrated client-side feature / SPA view"* | **Vue 2 SPA** | `/app`, `wwwroot/app/` | Shared `ApplicationDbContext` (`public`) |
+           | *"Add a completely independent / standalone new sub-app"* | **Autonomous Vue Sub-App** | `/app2`, `wwwroot/app2/` | Dedicated `App2DbContext` (`app2` schema) |
+
+        2. **Mindful Architectural Discussion:** Proactively present and explain the technical translation to the System Architect before building.
+        3. **Autonomous AI Decision-Making & Full-Stack Execution:** If the System Architect defers technical choices, is unsure, or lacks platform/framework knowledge:
+           - **Autonomously Select Paradigm & Schema:** The AI agent autonomously selects the optimal paradigm, folder layout, and schema isolation pattern based on business intent.
+           - **Explain Architectural Choice:** Explains the architectural decision clearly in clean, non-technical natural language.
+           - **Full-Stack Execution:** Implements the complete full-stack feature (frontend UI + C# backend + EF Core persistence) without requiring technical guidance from the user.
 
 *   **Virtual / Sub-Application Isolation Rule (Optional Pattern):**
     *   When intentionally scaling or adding multiple distinct sub-applications (especially within the same paradigm), follow the folder organization and layout isolation patterns detailed in [.agents/VIRTUAL_APPS_GUIDE.md](file:///.agents/VIRTUAL_APPS_GUIDE.md):

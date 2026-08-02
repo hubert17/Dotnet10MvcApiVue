@@ -32,9 +32,12 @@ namespace Dotnet10MvcApi.Models.Entities
             var csvFile = GetBillboardCsvFile();
             if (File.Exists(csvFile))
             {
+                var schema = db.Model.GetDefaultSchema();
+                var songTable = string.IsNullOrWhiteSpace(schema) ? "\"Songs\"" : $"\"{schema}\".\"Songs\"";
+
                 if (clearSongTable)
                 {
-                    db.Database.ExecuteSqlRaw("DELETE FROM [Songs]");
+                    db.Database.ExecuteSqlRaw($"DELETE FROM {songTable}");
                 }
 
                 if (!db.Songs.Any())
@@ -62,8 +65,7 @@ namespace Dotnet10MvcApi.Models.Entities
                             using (var cmd = conn.CreateCommand())
                             {
                                 cmd.Transaction = transaction;
-                                // Use named parameters, as required by the EF Core Jet provider's command parser
-                                cmd.CommandText = "INSERT INTO [Songs] ([Title], [Artist], [Duration], [PeakChartPosition], [ReleaseYear], [RecordLabel]) VALUES (@p0, @p1, @p2, @p3, @p4, @p5)";
+                                cmd.CommandText = $"INSERT INTO {songTable} (\"Title\", \"Artist\", \"Duration\", \"PeakChartPosition\", \"ReleaseYear\", \"RecordLabel\") VALUES (@p0, @p1, @p2, @p3, @p4, @p5)";
                                 
                                 var titleParam = cmd.CreateParameter(); titleParam.ParameterName = "@p0"; titleParam.DbType = System.Data.DbType.String; cmd.Parameters.Add(titleParam);
                                 var artistParam = cmd.CreateParameter(); artistParam.ParameterName = "@p1"; artistParam.DbType = System.Data.DbType.String; cmd.Parameters.Add(artistParam);

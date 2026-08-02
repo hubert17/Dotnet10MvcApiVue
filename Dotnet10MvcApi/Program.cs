@@ -29,25 +29,14 @@ using Piranha.Manager.Editor;
 using Scalar.AspNetCore;
 using OpenApi = Microsoft.OpenApi;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configure DBContext based on Provider setting
-var dbProvider = builder.Configuration["DatabaseProvider"] ?? "Jet";
-if (dbProvider.Equals("Jet", StringComparison.OrdinalIgnoreCase))
-{
-    var appDataPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
-    AppDomain.CurrentDomain.SetData("DataDirectory", appDataPath);
-
-    var connString = builder.Configuration.GetConnectionString("JetConnection");
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseJet(connString));
-}
-else if (dbProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
-{
-    var connString = builder.Configuration.GetConnectionString("PostgreSqlConnection");
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(connString));
-}
+// 1. Configure DBContext for PostgreSQL
+var connString = builder.Configuration.GetConnectionString("PostgreSqlConnection");
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options => options.UseNpgsql(connString));
+builder.Services.AddScoped(sp => sp.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
 
 // 2. Configure JWT Bearer Authentication
 var secret = builder.Configuration["JwtSettings:Secret"] ?? "f848bcae3399961afba711f8ced6fc3c";
@@ -384,32 +373,15 @@ using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         
-        // This will run the migration (creating RefreshTokens table)
+        // Run EF Core Migrations
         db.Database.Migrate();
+        Console.WriteLine("Database migrated successfully.");
 
-        // Create [#Dual] table needed by EF Core Jet provider for Any() and other scalar queries
-        try
-        {
-            db.Database.ExecuteSqlRaw("CREATE TABLE [#Dual] (Id INT)");
-            db.Database.ExecuteSqlRaw("INSERT INTO [#Dual] (Id) VALUES (1)");
-            Console.WriteLine("Created [#Dual] table successfully.");
-        }
-        catch { /* Already exists */ }
-
-        // Print existing tables for diagnostics
-        var conn = db.Database.GetDbConnection();
-        if (conn.State != System.Data.ConnectionState.Open) conn.Open();
-        var dt = conn.GetSchema("Tables");
-        Console.WriteLine("TABLES IN ACCESS DATABASE:");
-        foreach (System.Data.DataRow row in dt.Rows)
-        {
-            var tableName = row["TABLE_NAME"].ToString();
-            var tableType = row["TABLE_TYPE"].ToString();
-            if (tableType == "TABLE")
-            {
-                Console.WriteLine($"- {tableName}");
-            }
-        }
+        // Seed default admin account (admin/admin)
+        var devUserService = scope.ServiceProvider.GetRequiredService<DevUserService>();
+        var userAccountService = new UserAccountService(db, devUserService);
+        userAccountService.EnsureAdminExistsAsync().GetAwaiter().GetResult();
+        Console.WriteLine("Seeded default admin account (admin) successfully.");
 
         // Seed Product table if empty
         if (!db.Products.Any())
