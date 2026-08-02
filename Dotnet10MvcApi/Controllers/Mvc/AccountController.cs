@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using AppMvcOptions = Dotnet10MvcApi.Models.MvcOptions;
+using Dotnet10MvcApi.Models;
 using Dotnet10MvcApi.Models.Entities;
 using Dotnet10MvcApi.Services;
 
@@ -31,6 +32,7 @@ namespace Dotnet10MvcApi.Controllers.Mvc
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             ViewBag.ReturnUrl = (string.IsNullOrWhiteSpace(returnUrl) || returnUrl == "/") ? null : returnUrl;
+            ViewBag.Username = TempData["Username"] as string ?? "";
             return View();
         }
 
@@ -43,6 +45,7 @@ namespace Dotnet10MvcApi.Controllers.Mvc
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
                 TempData["alert"] = "Username and password are required.";
+                TempData["Username"] = username;
                 return RedirectToAction("Login", new { ReturnUrl = returnUrl });
             }
 
@@ -67,6 +70,12 @@ namespace Dotnet10MvcApi.Controllers.Mvc
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     new System.Security.Claims.ClaimsPrincipal(claimsIdentity),
                     authProperties);
+
+                bool isAdmin = cleanUsername == UserAccount.DEFAULT_ADMIN_LOGIN ||
+                               (user.Roles != null && System.Linq.Enumerable.Any(user.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries), r => r.Trim().Equals(UserAccount.DEFAULT_ADMIN_ROLENAME, StringComparison.OrdinalIgnoreCase)));
+
+                if (!isAdmin && user.MustChangePassword)
+                    return RedirectToAction("ChangePassword", new { ReturnUrl = redirectTarget });
 
                 if (cleanUsername == UserAccount.DEFAULT_ADMIN_LOGIN && password == UserAccount.DEFAULT_ADMIN_LOGIN)
                     return RedirectToAction("ChangePassword", new { ReturnUrl = redirectTarget });
@@ -95,6 +104,7 @@ namespace Dotnet10MvcApi.Controllers.Mvc
             }
 
             TempData["alert"] = "Invalid username or password";
+            TempData["Username"] = username;
             return RedirectToAction("Login", new { ReturnUrl = returnUrl });
         }
 
@@ -130,9 +140,18 @@ namespace Dotnet10MvcApi.Controllers.Mvc
         }
 
         [Authorize]
-        public IActionResult ChangePassword(string? returnUrl = null)
+        public async Task<IActionResult> ChangePassword(string? returnUrl = null)
         {
             ViewBag.ReturnUrl = returnUrl;
+            var userName = User.Identity?.Name;
+            var user = await _userAccountService.GetUserByUsernameAsync(userName);
+
+            bool isAdmin = User.IsInRole(UserAccount.DEFAULT_ADMIN_ROLENAME) ||
+                           User.IsInRole("Admin") ||
+                           string.Equals(userName, UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase) ||
+                           (user != null && user.Roles != null && System.Linq.Enumerable.Any(user.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries), r => r.Trim().Equals(UserAccount.DEFAULT_ADMIN_ROLENAME, StringComparison.OrdinalIgnoreCase)));
+
+            ViewBag.IsForcedChange = !isAdmin && user != null && user.MustChangePassword;
             return View();
         }
 
@@ -224,7 +243,7 @@ namespace Dotnet10MvcApi.Controllers.Mvc
         [Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]
         [HttpPost("/Account/Users/Create")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateUser([FromForm] string username, [FromForm] string password, [FromForm] string roles, [FromForm] bool isActive = true)
+        public async Task<IActionResult> CreateUser([FromForm] string username, [FromForm] string password, [FromForm] string roles, [FromForm] bool isActive = true, [FromForm] bool mustChangePassword = false)
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
@@ -237,7 +256,7 @@ namespace Dotnet10MvcApi.Controllers.Mvc
             }
 
             var cleanRole = string.IsNullOrWhiteSpace(roles) ? "user" : roles.Trim().ToLower();
-            var (id, error) = await _userAccountService.CreateUserAsync(username, password, cleanRole, allowAdmin: true);
+            var (id, error) = await _userAccountService.CreateUserAsync(username, password, cleanRole, allowAdmin: true, mustChangePassword: mustChangePassword);
 
             if (id == null)
             {
@@ -245,6 +264,23 @@ namespace Dotnet10MvcApi.Controllers.Mvc
             }
 
             return Json(new { success = true, message = $"User '{username}' created successfully." });
+        }
+
+        [Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]
+        [HttpPost("/Account/Users/Import")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BulkImportUsers(
+            [FromBody] List<UserImportRowDto> importRows,
+            [FromQuery] string roles = "",
+            [FromQuery] bool mustChangePassword = true)
+        {
+            if (importRows == null || importRows.Count == 0)
+            {
+                return Json(new UserImportResultDto { Success = false, Message = "No valid import data provided." });
+            }
+
+            var result = await _userAccountService.BulkImportUsersAsync(importRows, roles, mustChangePassword);
+            return Json(result);
         }
 
         [Authorize(Roles = UserAccount.DEFAULT_ADMIN_ROLENAME)]

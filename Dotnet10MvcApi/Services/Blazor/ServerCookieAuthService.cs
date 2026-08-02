@@ -31,8 +31,14 @@ namespace Dotnet10MvcApi.Services.Blazor
 
         public async Task<bool> SignInAsync(string username, string password, string? returnUrl = null)
         {
+            var (success, _) = await SignInUserAsync(username, password, returnUrl);
+            return success;
+        }
+
+        public async Task<(bool Success, UserAccount? User)> SignInUserAsync(string username, string password, string? returnUrl = null)
+        {
             var u = await _users.AuthenticateAsync(username, password);
-            if (u is null) return false;
+            if (u is null) return (false, null);
 
             var claims = UserAccountService.BuildClaims(u);
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -42,7 +48,7 @@ namespace Dotnet10MvcApi.Services.Blazor
             {
                 await _http.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, _user);
             }
-            return true;
+            return (true, u);
         }
 
         public async Task SignOutAsync()

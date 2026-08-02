@@ -75,6 +75,12 @@ ASP.NET Core .NET 10 Monolith ────┼── GET /blazor ─────�
     *   **Permanent Active Status:** Blocks deactivation of the primary admin account.
     *   **Deletion Protection:** Blocks deletion of the primary admin account.
     *   **Reserved Username:** Prevents creating new accounts using the reserved default admin username.
+*   **Built-in Zero-Latency CSV Bulk User Import (`/Account/Users/Import`)**:
+    *   **4-Step Wizard**: Features an interactive Petite-Vue wizard modal for importing bulk users from any CSV file (with header auto-detection & headerless support).
+    *   **Smart Column Mapping & Rules**: Auto-detects identifier columns (email/username), validates email formats, and provides 5 password derivation strategies (Uniform Static, Direct Column, Multi-Column Combination, Email Prefix, and Custom Tokens `{ColumnName}`).
+    *   **Strategy-Scoped Formatting Controls**: Supports custom Prepend/Append text and character removal (`-`, `/`, space) for direct/multi-column passwords with real-time live preview.
+    *   **Paginated Dry-Run Review & CSV Export**: Interactive validation grid with status badges (`Ready`, `Skip: Duplicate`, `Skip: Primary Admin Reserved`, `Invalid Email`) and a 1-click **"Export CSV"** button (`downloadPreviewCsv`) to download computed credentials.
+    *   **Transactional Bulk Ingestion**: Executes account creation inside a single database transaction via `POST /Account/Users/Import?roles=...&mustChangePassword=true`.
 
 ---
 

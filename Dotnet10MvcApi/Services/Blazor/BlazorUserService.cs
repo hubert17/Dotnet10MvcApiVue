@@ -30,5 +30,11 @@ namespace Dotnet10MvcApi.Services.Blazor
 
         public bool ChangePassword(string? userName, string? currentPassword, string? newPassword)
             => _userAccountService.ChangePassword(userName, currentPassword, newPassword);
+
+        public UserAccount? GetUserByUsername(string? userName)
+            => _userAccountService.GetUserByUsernameAsync(userName).GetAwaiter().GetResult();
+
+        public Task<UserAccount?> GetUserByUsernameAsync(string? userName)
+            => _userAccountService.GetUserByUsernameAsync(userName);
     }
 }
