@@ -12,7 +12,7 @@
 
 <MudText>Already have an account? <MudLink OnClick='() => NavManager.NavigateTo("login", true)'>Sign In</MudLink></MudText>
 
-<MudTextField T="string" @bind-Value="@NewAccount.Username" name="@nameof(NewAccount.Username)" Label="Username / E-mail" Variant="Variant.Outlined" Class="my-6"></MudTextField>
+<MudTextField T="string" @bind-Value="@NewAccount.Username" name="@nameof(NewAccount.Username)" Label="E-mail" Variant="Variant.Outlined" Class="my-6"></MudTextField>
 <MudTextField T="string" InputType="InputType.Password" @bind-Value="@NewAccount.Password" name="@nameof(NewAccount.Password)" Label="Password" Variant="Variant.Outlined" Class="my-6" />
 <MudTextField T="string" InputType="InputType.Password" @bind-Value="@NewAccount.RetypePassword" name="@nameof(NewAccount.RetypePassword)" Label="Retype Password" Variant="Variant.Outlined" />
 
