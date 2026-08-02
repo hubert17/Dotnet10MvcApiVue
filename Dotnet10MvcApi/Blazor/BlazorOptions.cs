@@ -18,5 +18,10 @@ namespace Dotnet10MvcApi.Blazor
         /// Formatted base href string for HTML head, e.g. "/blazor/" or "/app2/".
         /// </summary>
         public string BaseHref => $"/{RoutePrefix.Trim('/')}/";
+
+        /// <summary>
+        /// Formatted home path string for Blazor home (e.g. "/blazor").
+        /// </summary>
+        public string HomePath => string.IsNullOrWhiteSpace(RoutePrefix) ? "/" : $"/{RoutePrefix.Trim('/')}";
     }
 }

@@ -51,17 +51,21 @@
     async Task OnLogin()
     {
         isSubmitting = true;
-        if (await Auth.SignInAsync(Credential!.Username!, Credential.Password!, ReturnUrl))
+        string targetUrl = (!string.IsNullOrWhiteSpace(ReturnUrl) && ReturnUrl != "/")
+            ? ReturnUrl
+            : BlazorOptions.HomePath;
+
+        if (await Auth.SignInAsync(Credential!.Username!, Credential.Password!, targetUrl))
         {
             AuthProvider.Notify();
             if (Credential.Username.Equals(UserAccount.DEFAULT_ADMIN_LOGIN, StringComparison.OrdinalIgnoreCase) &&
                 Credential.Password == UserAccount.DEFAULT_ADMIN_LOGIN)
             {
-                Nav.NavigateTo($"change-password?ReturnUrl={Uri.EscapeDataString(ReturnUrl ?? "/blazor")}", true);
+                Nav.NavigateTo($"change-password?ReturnUrl={Uri.EscapeDataString(targetUrl)}", true);
             }
             else
             {
-                Nav.NavigateTo(ReturnUrl ?? "/blazor", true);
+                Nav.NavigateTo(targetUrl, true);
             }
         }
         else
