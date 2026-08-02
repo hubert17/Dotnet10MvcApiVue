@@ -1,13 +1,14 @@
+@inject Dotnet10MvcApi.Models.MvcOptions MvcOptions
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>@ViewBag.Title - My ASP.NET Application</title>
-    <meta name="Name" content="@ViewBag.Title - My ASP.NET Application" />
-    <meta name="Description" content="Sleek and modern authentication portal" />
-    <meta property="og:title" content="@ViewBag.Title - My ASP.NET Application" />
-    <meta property="og:description" content="Sleek and modern authentication portal" />
+    <title>@ViewBag.Title - @MvcOptions.AppName</title>
+    <meta name="Name" content="@ViewBag.Title - @MvcOptions.AppName" />
+    <meta name="Description" content="@MvcOptions.AppDescription" />
+    <meta property="og:title" content="@ViewBag.Title - @MvcOptions.AppName" />
+    <meta property="og:description" content="@MvcOptions.AppDescription" />
 
     @if (TempData["alert"] != null)
     {

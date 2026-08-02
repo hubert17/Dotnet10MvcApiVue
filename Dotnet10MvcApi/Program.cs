@@ -24,6 +24,10 @@ var connString = builder.Configuration.GetConnectionString("PostgreSqlConnection
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options => options.UseNpgsql(connString));
 builder.Services.AddScoped(sp => sp.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
 
+// Configure MvcOptions from "MvcSettings"
+builder.Services.Configure<Dotnet10MvcApi.Models.MvcOptions>(builder.Configuration.GetSection("MvcSettings"));
+builder.Services.AddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Dotnet10MvcApi.Models.MvcOptions>>().Value);
+
 // 2. Configure JWT Bearer Authentication
 var secret = builder.Configuration["JwtSettings:Secret"] ?? "f848bcae3399961afba711f8ced6fc3c";
 var issuer = builder.Configuration["JwtSettings:Issuer"] ?? "Dotnet10MvcApi";
@@ -243,6 +247,15 @@ app.MapRazorComponents<Dotnet10MvcApi.Blazor.App>()
 
 app.MapHub<Dotnet10MvcApi.Services.Notifications.NotificationHub>("/notificationhub");
 app.MapHub<Dotnet10MvcApi.Services.Notifications.ChatHub>("/chathub");
+
+var mvcHomeRoute = builder.Configuration["MvcSettings:HomeRoute"]?.Trim('/');
+if (!string.IsNullOrWhiteSpace(mvcHomeRoute))
+{
+    app.MapControllerRoute(
+        name: "portalHome",
+        pattern: mvcHomeRoute,
+        defaults: new { controller = "Home", action = "Index" });
+}
 
 app.MapControllerRoute(
     name: "default",

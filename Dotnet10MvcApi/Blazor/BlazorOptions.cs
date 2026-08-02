@@ -9,6 +9,12 @@ namespace Dotnet10MvcApi.Blazor
         public string RoutePrefix { get; set; } = "blazor";
 
         /// <summary>
+        /// App name displayed in Blazor layout headers.
+        /// Configured in appsettings.json under "BlazorSettings:AppName".
+        /// </summary>
+        public string AppName { get; set; } = "Dotnet10 Blazor";
+
+        /// <summary>
         /// Formatted base href string for HTML head, e.g. "/blazor/" or "/app2/".
         /// </summary>
         public string BaseHref => $"/{RoutePrefix.Trim('/')}/";

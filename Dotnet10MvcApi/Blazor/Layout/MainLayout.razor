@@ -7,6 +7,7 @@
 @inject ILocalStorageService localStorage
 @inject IJSRuntime JS
 @inject NavigationManager NavManager
+@inject BlazorOptions BlazorOptions
 
 <AntiforgeryToken />
 
@@ -33,7 +34,7 @@
                            Edge="Edge.Start"
                            OnClick="DrawerToggle" />
         </MudHidden>
-        <MudText Typo="Typo.h6" Class="ml-3">Dotnet10 MVC + Blazor</MudText>
+        <MudText Typo="Typo.h6" Class="ml-3">@BlazorOptions.AppName</MudText>
 
         <MudSpacer />
 

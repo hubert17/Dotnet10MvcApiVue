@@ -1,13 +1,14 @@
+@inject Dotnet10MvcApi.Models.MvcOptions MvcOptions
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=yes, user-scalable=yes">
-    <title>@ViewBag.Title@ViewBag.TitleBar - My ASP.NET Application</title>
-    <meta name="Name" content="@ViewBag.Title@ViewBag.TitleBar - My ASP.NET Application" />
-    <meta name="Description" content="Site Description" />
-    <meta property="og:title" content="@ViewBag.Title@ViewBag.TitleBar - My ASP.NET Application" />
-    <meta property="og:description" content="Site Description" />
+    <title>@ViewBag.Title@ViewBag.TitleBar - @MvcOptions.AppName</title>
+    <meta name="Name" content="@ViewBag.Title@ViewBag.TitleBar - @MvcOptions.AppName" />
+    <meta name="Description" content="@MvcOptions.AppDescription" />
+    <meta property="og:title" content="@ViewBag.Title@ViewBag.TitleBar - @MvcOptions.AppName" />
+    <meta property="og:description" content="@MvcOptions.AppDescription" />
 
     @if (TempData["alert"] != null)
     {
@@ -27,7 +28,7 @@
     @* Navigation *@
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">My ASP.NET Webapp</a>
+            <a class="navbar-brand" href="@MvcOptions.HomePath">@MvcOptions.AppName</a>
             @if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 <form class="form-inline d-block d-md-none ml-5" action="/account/ChangePassword" method="get">
@@ -40,7 +41,7 @@
             <div class="collapse navbar-collapse bg-dark" id="navbarCollapse">
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/">Home</a>
+                        <a class="nav-link" href="@MvcOptions.HomePath">Home</a>
                     </li>
                     @if (IsSectionDefined("DynamicNavMenu"))
                     {

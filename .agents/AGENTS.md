@@ -114,16 +114,16 @@ These instructions govern all future modifications, tests, and task executions p
 *   **Unified Monolith Design:** This project is a single-project "one-stop shop" that hosts multi-paradigm web experiences simultaneously out of a single ASP.NET Core process, now integrated with **Piranha CMS**:
     1.  `/` -> Static Web Root Landing Page (`wwwroot/index.html`).
     2.  `/app` -> Vue 2.x Single Page Application (`wwwroot/app/index.html` via ES Modules).
-    3.  `/home` -> Server-Rendered Razor MVC Views (`HomeController`).
-    4.  `/blazor` -> Interactive Blazor Server App (`Blazor/App.razor` with MudBlazor UI & SignalR).
+    3.  `/home` -> Server-Rendered Razor MVC Views (`HomeController`). Configurable via `appsettings.json` (`MvcSettings:HomeRoute`, `MvcSettings:AppName`, `MvcSettings:AppDescription` bound to `MvcOptions`).
+    4.  `/blazor` -> Interactive Blazor Server App (`Blazor/App.razor` with MudBlazor UI & SignalR). Configurable via `appsettings.json` (`BlazorSettings:RoutePrefix`, `BlazorSettings:AppName` bound to `BlazorOptions`).
     5.  `/api/...` -> Controller-based REST APIs with JWT Bearer security.
     6.  `/blogs`, `/articles`, `/manager` -> **Piranha CMS v12**: Public editorial content engine for blogs, technical articles, custom block types (`HeroBlock`), and full headless/SSR admin management portal (`/manager`).
     *   **Rule:** Maintain this unified monolith design. Do not split these paradigms into separate projects or introduce node/webpack build servers.
 
 *   **User Terminology & Domain Concepts:** When the user refers to the following terms, map them strictly to their corresponding application paradigm:
     *   **Landing Page:** The static web root landing page (`/` or `wwwroot/index.html`).
+    *   **Portal** or **MVC** or **SSR:** ASP.NET Core MVC Razor server-side rendered views (`/portal` or `/home`), with lightweight client-side reactivity powered by `petite-vue`.
     *   **SPA** or **app:** The Vue 2.x Single Page Application (`/app` or `wwwroot/app/index.html`), a zero-node, zero-build app using native ES modules.
-    *   **MVC** or **SSR:** ASP.NET Core MVC Razor server-side rendered views (`/home`), with lightweight client-side reactivity powered by `petite-vue`.
     *   **Blazor** or **Blazor Server:** Interactive Blazor Server components (`/blazor`), MudBlazor UI controls, state management, and real-time SignalR circuit state preservation.
     *   **API** or **WebAPI:** Controller-based REST Web API endpoints (`/api/...`) with JWT Bearer authentication.
     *   **CMS** or **Piranha**: Piranha CMS v12 content engine serving public blogs (`/blogs`), technical articles (`/articles`), custom blocks (`HeroBlock`), and the admin manager portal (`/manager`).
