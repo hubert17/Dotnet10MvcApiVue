@@ -2,7 +2,7 @@
 
 [![Framework](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Architecture](https://img.shields.io/badge/Architecture-Unified%20Layered%20Monolith-38bdf8?style=flat-square)](https://github.com/hubert17/Dotnet10MvcApiVue)
-[![Database](https://img.shields.io/badge/Database-EF%20Core%20PostgreSQL%20%2B%20SQLite-4ade80?style=flat-square)](https://github.com/hubert17/Dotnet10MvcApiVue)
+[![Database](https://img.shields.io/badge/Database-EF%20Core%20Jet%20%2B%20PostgreSQL%20%2B%20SQLite-4ade80?style=flat-square)](https://github.com/hubert17/Dotnet10MvcApiVue)
 [![Author](https://img.shields.io/badge/Created%20By-Bernard%20Gabon-c084fc?style=flat-square)](https://github.com/hubert17)
 
 A state-of-the-art **ASP.NET Core .NET 10.0** application hosting **6 distinct web application paradigms** simultaneously out of a single process. Built as a zero-build, unified layered monolith combining static landing pages, server-rendered Razor MVC, zero-node Vue 2.x SPAs, real-time Blazor Server with MudBlazor, Piranha CMS v12 editorial content publishing, and controller-based REST APIs.
@@ -49,10 +49,12 @@ ASP.NET Core .NET 10 Monolith ────┼── GET /blazor ─────�
 *   **Static SSR Auth Routes:** Blazor `/login` and `/logout` pages render in Static SSR mode (`RenderMode = null`) to ensure HTTP `Set-Cookie` headers are properly dispatched to browsers.
 *   **Dual Authentication Pipeline:** Controller APIs (`/api/...`) use JWT Bearer Security (`[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]`) with refresh token revocation.
 
-### 3. PostgreSQL Database Engine (Npgsql / EF Core) & SQLite Engine
-*   **Relational Database Engine:** Application relational data uses `Npgsql.EntityFrameworkCore.PostgreSQL` targeting PostgreSQL with custom schema support (`net10multiparadigm`).
+### 3. Configurable Relational Database Engines (MS Access Jet / PostgreSQL) & SQLite Engine
+*   **Relational Database Engine:** Application relational data uses a configurable EF Core provider via `DatabaseProvider` in `appsettings.json`:
+    - **MS Access Jet (Default):** Uses `EntityFrameworkCore.Jet` targeting `App_Data/MyAccessDb.mdb` (`DatabaseSchema=""`), featuring automatic single-row `[#Dual]` helper table auto-creation for scalar LINQ queries.
+    - **PostgreSQL:** Uses `Npgsql.EntityFrameworkCore.PostgreSQL` targeting PostgreSQL (`mypgDb` database) with optional custom schema support (`DatabaseSchema`).
 *   **Piranha CMS Engine:** Editorial data uses `Piranha.Data.EF.SQLite` targeting `App_Data/piranha.db`.
-*   **High-Speed ADO.NET Bulk Seeding:** Inserts 10,000+ Billboard song records using raw parameterized ADO.NET SQL commands inside a single transaction, bypassing EF Core change-tracking overhead.
+*   **High-Speed ADO.NET Bulk Seeding:** Inserts 10,000+ Billboard song records using raw parameterized ADO.NET SQL commands inside a single transaction, bypassing EF Core change-tracking overhead across both Access Jet and PostgreSQL.
 
 ### 4. Interactive API Documentation & HTML-First Views
 *   **Scalar OpenAPI Playground:** Visual API playground served at `/scalar/v1` (with `/swagger` redirected automatically).
@@ -86,27 +88,30 @@ ASP.NET Core .NET 10 Monolith ────┼── GET /blazor ─────�
 
 ## 🚀 Getting Up & Running
 
-### 1. PostgreSQL Database Setup & Connection Configuration
+### 1. Database Setup & Provider Configuration (MS Access Jet & PostgreSQL)
 
-The application uses **PostgreSQL** (`Npgsql.EntityFrameworkCore.PostgreSQL`) as its primary relational database engine. All application tables are isolated under a custom database schema (`net10multiparadigm`).
+The application supports **MS Access Jet** (default) and **PostgreSQL** (`Npgsql.EntityFrameworkCore.PostgreSQL`) relational database engines, configured seamlessly via `appsettings.json`.
 
 1. **Configure Connection Details** in `Dotnet10MvcApi/appsettings.json`:
    ```json
    {
-     "DatabaseProvider": "PostgreSQL",
+     "DatabaseProvider": "Jet",
      "DatabaseSchema": "",
      "ConnectionStrings": {
+       "JetConnection": "Provider=Microsoft.ACE.OLEDB.16.0;Data Source=App_Data/MyAccessDb.mdb",
        "PostgreSqlConnection": "Host=192.168.0.200;Port=5433;Database=mypgDb;Username=pguser;Password=pgpassword"
      }
    }
    ```
+   *Note:* When using MS Access Jet (`DatabaseProvider: "Jet"`), set `"DatabaseSchema": ""` (empty string) as MS Access does not support named database schemas.
 
 2. **Automatic Migration & Data Seeding on Startup**:
    When launched under `Development` mode (`ASPNETCORE_ENVIRONMENT=Development`), the application automatically handles database initialization on startup:
-   - **Schema & Table Migration:** Executes `db.Database.Migrate()` to ensure schema `net10multiparadigm` and all entity tables (`Products`, `Songs`, `UserAccounts`, `RefreshTokens`, `BlazorNotifications`) exist on your PostgreSQL server.
+   - **Schema & Table Migration:** Executes `db.Database.Migrate()` to ensure all entity tables (`Products`, `Songs`, `UserAccounts`, `RefreshTokens`, `BlazorNotifications`) exist in your active database (`MyAccessDb.mdb` or PostgreSQL).
+   - **`[#Dual]` Table Initialization (Jet):** Auto-creates and seeds the single-row `[#Dual]` scalar helper table required by EF Core Jet for `.Any()` and scalar LINQ queries.
    - **Admin Account Auto-Seeding:** Ensures default administrator account (`admin` / `admin`) exists with Piranha CMS access claims.
    - **Products Dataset:** Seeds catalog product entries if empty.
-   - **Billboard Songs Ingestion:** Uses high-speed raw ADO.NET bulk transactions to ingest 10,000+ Billboard song entries into `net10multiparadigm."Songs"`.
+   - **Billboard Songs Ingestion:** Uses high-speed raw ADO.NET bulk transactions to ingest 10,000+ Billboard song entries into `[Songs]`.
    - **Piranha CMS Engine:** Auto-seeds editorial blog posts and technical articles into `App_Data/piranha.db` (SQLite).
 
 3. **Manual EF Core CLI Commands (Optional)**:
@@ -159,7 +164,7 @@ Once the application starts, access the 6 web application paradigms at the follo
 | **REST Web API Scalar Docs** | `https://localhost:7031/scalar/v1` | Interactive OpenAPI Scalar playground & `/swagger` redirect. |
 
 #### Default Development Credentials
-On initial startup, EF Core migrations automatically create database tables under schema `net10multiparadigm` and seed the default administrator account:
+On initial startup, EF Core migrations automatically create database tables and seed the default administrator account:
 * **Administrator Account**:
   * **Username:** `admin`
   * **Password:** `admin`
@@ -197,7 +202,7 @@ Dotnet10MvcApiVue/
 │   │       ├── CrudsampleController.cs  # Product CRUD Portal
 │   │       └── HomeController.cs        # MVC Home Portal (Index, About, Chat)
 │   ├── Data/
-│   │   └── ApplicationDbContext.cs      # EF Core Access DB Context
+│   │   └── ApplicationDbContext.cs      # EF Core Jet / PostgreSQL DB Context
 │   ├── Helpers/
 │   │   └── ImageUploadExtension.cs      # GDI+ Image Thumbnail Generator
 │   ├── Models/

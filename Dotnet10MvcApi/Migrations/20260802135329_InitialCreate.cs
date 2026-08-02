@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -17,12 +16,12 @@ namespace Dotnet10MvcApi.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "numeric", nullable: false),
-                    Unit = table.Column<string>(type: "text", nullable: false),
-                    PictureFilename = table.Column<string>(type: "text", nullable: false)
+                        .Annotation("Jet:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "longchar", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Unit = table.Column<string>(type: "longchar", nullable: false),
+                    PictureFilename = table.Column<string>(type: "longchar", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -34,10 +33,10 @@ namespace Dotnet10MvcApi.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Token = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Created = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
+                        .Annotation("Jet:Identity", "1, 1"),
+                    UserName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false),
+                    Token = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
+                    Created = table.Column<DateTime>(type: "datetime", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -49,13 +48,13 @@ namespace Dotnet10MvcApi.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Title = table.Column<string>(type: "text", nullable: false),
-                    Artist = table.Column<string>(type: "text", nullable: false),
-                    Duration = table.Column<string>(type: "text", nullable: false),
+                        .Annotation("Jet:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "longchar", nullable: false),
+                    Artist = table.Column<string>(type: "longchar", nullable: false),
+                    Duration = table.Column<string>(type: "longchar", nullable: false),
                     PeakChartPosition = table.Column<int>(type: "integer", nullable: false),
                     ReleaseYear = table.Column<int>(type: "integer", nullable: false),
-                    RecordLabel = table.Column<string>(type: "text", nullable: false)
+                    RecordLabel = table.Column<string>(type: "longchar", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -66,14 +65,15 @@ namespace Dotnet10MvcApi.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserName = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    PasswordHash = table.Column<byte[]>(type: "bytea", nullable: false),
-                    PasswordSalt = table.Column<byte[]>(type: "bytea", nullable: false),
-                    CreatedOn = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    LastLogin = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    Roles = table.Column<string>(type: "text", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserName = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
+                    PasswordHash = table.Column<byte[]>(type: "longbinary", nullable: false),
+                    PasswordSalt = table.Column<byte[]>(type: "longbinary", nullable: false),
+                    CreatedOn = table.Column<DateTime>(type: "datetime", nullable: false),
+                    LastLogin = table.Column<DateTime>(type: "datetime", nullable: true),
+                    IsActive = table.Column<bool>(type: "smallint", nullable: false),
+                    MustChangePassword = table.Column<bool>(type: "smallint", nullable: false),
+                    Roles = table.Column<string>(type: "longchar", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -85,13 +85,13 @@ namespace Dotnet10MvcApi.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Title = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    Content = table.Column<string>(type: "text", nullable: true),
+                        .Annotation("Jet:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true),
+                    Content = table.Column<string>(type: "longchar", nullable: true),
                     NotificationType = table.Column<int>(type: "integer", nullable: false),
-                    NavigateToUrl = table.Column<string>(type: "text", nullable: true),
-                    CreatedOn = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true)
+                    NavigateToUrl = table.Column<string>(type: "longchar", nullable: true),
+                    CreatedOn = table.Column<DateTime>(type: "datetime", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {

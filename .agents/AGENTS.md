@@ -19,20 +19,24 @@ These instructions govern all future modifications, tests, and task executions p
 *   **HTTPS Dev Certificate Initialization Rule:**
     *   **Rule:** For non-Visual Studio environments or fresh machine setups, AI agents must silently ensure the local ASP.NET Core HTTPS developer certificate is generated and trusted (`dotnet dev-certs https --trust`) prior to initial application execution.
     *   **Rationale:** Guarantees smooth HTTPS execution and clean SSL handshakes on `https://localhost:7031` without certificate warnings across all browsers and AI subagent tools.
+*   **Target Platform & Dedicated Publish Folder (Windows x64):** `Dotnet10MvcApi.csproj` enforces `<PlatformTarget>x64</PlatformTarget>`, `<RuntimeIdentifier>win-x64</RuntimeIdentifier>`, and `<PublishDir>..\_publish\</PublishDir>` to guarantee that all build, run, and publish operations strictly generate 64-bit Windows binaries (`win-x64`) targeting the root `_publish` folder (`C:\Users\Gabs\Github\hubert17\Dotnet10MvcApiVue\_publish`).
 *   **App Execution & Clickable URLs Rule:**
     *   **Paradigm-Specific Clickable Links:** Whenever the application has been debugged and launched successfully, include clickable Markdown links strictly for the main URL of the specific paradigm currently being worked on or debugged (e.g. [https://localhost:7031/app](https://localhost:7031/app) for Vue SPA, [https://localhost:7031/home](https://localhost:7031/home) for Razor MVC, [https://localhost:7031/manager](https://localhost:7031/manager) for Piranha CMS, or [https://localhost:7031/scalar/v1](https://localhost:7031/scalar/v1) for REST APIs), rather than listing sub-pages or all application URLs indiscriminately.
     *   **No Unsolicited Launching:** If you are not actively debugging a runtime issue, do **not** launch the application right away. Instead, offer to run/launch the app for the user and ask for their confirmation first.
 
 ---
 
-## 🗄️ Database & Queries (PostgreSQL / SQLite / EF Core)
+## 🗄️ Database & Queries (MS Access Jet / PostgreSQL / SQLite / EF Core)
 
 *   **Database Providers:** 
-    *   Application relational data uses `Npgsql.EntityFrameworkCore.PostgreSQL` targeting PostgreSQL (`mypgDb` database).
-    *   Piranha CMS content data uses `Piranha.Data.EF.SQLite` targeting `App_Data/piranha.db`.
+    *   **Configurable DB Provider Switch:** The primary application relational database provider is configured via `DatabaseProvider` in `appsettings.json` (`"Jet"` or `"PostgreSQL"`).
+    *   **MS Access Jet (Default):** Application relational data uses `EntityFrameworkCore.Jet` targeting MS Access (`App_Data/MyAccessDb.mdb`) with `"DatabaseSchema": ""` (empty). Automatically initializes single-row `[#Dual]` scalar helper table on startup. Requires 64-bit OLE DB runtime (`System.Data.OleDb`).
+    *   **PostgreSQL:** Alternatively uses `Npgsql.EntityFrameworkCore.PostgreSQL` targeting PostgreSQL (`mypgDb` database) when `DatabaseProvider` is set to `"PostgreSQL"`. Optional custom schema is applied when `"DatabaseSchema"` is specified.
+    *   **Piranha CMS Content Data:** Uses `Piranha.Data.EF.SQLite` targeting `App_Data/piranha.db`.
 *   **Sub-App Persistence & Schema Isolation Strategy:**
-    *   **Core Monolith & Integrated Apps:** MVC Razor Views (`/home`), Blazor Server (`/blazor`), Piranha CMS (`/manager`), REST APIs (`/api`), and the primary Vue 2 SPA (`/app`) share `ApplicationDbContext` on the default PostgreSQL schema (`public`).
-    *   **Autonomous Vue Sub-Apps (`/app2`, `/app3`):** Standalone, fully independent sub-apps use dedicated `DbContext` classes (`App2DbContext`). Schema names are **hardcoded within each DbContext** inside `OnModelCreating` (e.g., `modelBuilder.HasDefaultSchema("app2")`) to guarantee strict domain self-containment. Migrations are managed independently (`--context App2DbContext`).
+    *   **Core Monolith & Integrated Apps:** MVC Razor Views (`/home`), Blazor Server (`/blazor`), Piranha CMS (`/manager`), REST APIs (`/api`), and the primary Vue 2 SPA (`/app`) share `ApplicationDbContext`. When running PostgreSQL, default schema (`public` or custom `DatabaseSchema`) is applied. When running Jet, `DatabaseSchema` is set to `""`.
+    *   **Autonomous Vue Sub-Apps (`/app2`, `/app3`):** Standalone, fully independent sub-apps use dedicated `DbContext` classes (`App2DbContext`). Because **MS Access Jet does not support database schemas**, sub-app isolation under Jet is implemented via explicit table name prefixes (using `[Table("App2_Orders")]` / `ToTable(...)`) or by pointing `App2DbContext` to a separate Access database file (`App_Data/App2AccessDb.mdb`). Under PostgreSQL, dedicated schemas are hardcoded inside `OnModelCreating` (`modelBuilder.HasDefaultSchema("app2")`). Migrations are managed independently (`--context App2DbContext`).
+*   **Blank MS Access Template Extraction Rule:** Whenever a new or blank MS Access database file (`.mdb`) is needed (for initial setup, reset, or creating separate sub-app database files such as `App_Data/App2AccessDb.mdb`), copy/rename `Dotnet10MvcApi/App_Data/BlankAccessDb_zip` to append `.zip` extension (i.e. `BlankAccessDb_zip.zip`), extract the contained blank `.mdb` file, and rename it to the target `.mdb` filename (e.g., `MyAccessDb.mdb` or `App2AccessDb.mdb`).
 *   **Bulk Ingest Seeding:**
     *   **Rule:** Seeding of large lists (like the Billboard songs database) is executed using raw parameterized ADO.NET commands inside a single transaction (refer to `Song.Seed(...)`).
 
