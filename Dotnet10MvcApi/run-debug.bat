@@ -7,6 +7,14 @@ set "ASPNETCORE_ENVIRONMENT=Development"
 REM Set paths relative to batch script directory (current folder)
 set "PROJECT_DIR=%~dp0"
 
+REM Silent pre-flight check for trusted HTTPS developer certificate
+dotnet dev-certs https --check --trust >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [Pre-flight] Trusted HTTPS dev certificate missing or un-trusted. Initializing...
+    dotnet dev-certs https --trust
+)
+
+
 REM Check for Agent Mode argument
 if "%~1"=="--agent" (
     echo [Agent Mode] Launching application with low verbosity...
