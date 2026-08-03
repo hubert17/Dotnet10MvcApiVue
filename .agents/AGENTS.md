@@ -13,12 +13,28 @@ These instructions govern all future modifications, tests, and task executions p
         dotnet run --project Dotnet10MvcApi
         ```
     *   **Rationale:** Running under `Development` ensures `appsettings.Development.json` is loaded, providing development JWT secret keys, fallback DevUser accounts (`devadmin`/`admin123`), and enabling Piranha CMS auto-seeding without prompting the user.
-*   **Debug & Helper Script (`run-debug.bat`):** The project includes `Dotnet10MvcApi/run-debug.bat` to silently launch the application under Development mode:
-    *   **Standard Run:** `.\Dotnet10MvcApi\run-debug.bat`
-    *   **Agent Run (Low Verbosity):** `.\Dotnet10MvcApi\run-debug.bat --agent` (or `/agent`), which automatically sets `ASPNETCORE_ENVIRONMENT=Development` and executes `dotnet run --project . --verbosity quiet`.
-*   **HTTPS Dev Certificate Initialization Rule:**
-    *   **Rule:** For non-Visual Studio environments or fresh machine setups, AI agents must silently ensure the local ASP.NET Core HTTPS developer certificate is generated and trusted (`dotnet dev-certs https --trust`) prior to initial application execution.
-    *   **Rationale:** Guarantees smooth HTTPS execution and clean SSL handshakes on `https://localhost:7031` without certificate warnings across all browsers and AI subagent tools.
+*   **Debug & Helper Script (`run-debug.bat`):** The project includes `Dotnet10MvcApi/run-debug.bat` to launch the application under Development mode with two distinct behaviors:
+    *   **User Mode (Standard Run):** `.\Dotnet10MvcApi\run-debug.bat` — checks and attempts to trust the HTTPS developer certificate (UAC dialog may appear), then launches on `https://localhost:7031`.
+    *   **Agent Mode (AI/Headless Run):** `.\Dotnet10MvcApi\run-debug.bat --agent` (or `/agent`) — **skips all cert trust steps** (which require UAC elevation and silently hang in sandboxed terminals), then launches on **`http://localhost:5071`** instead. AI agents must use HTTP URLs (`http://localhost:5071/...`) when running in agent mode.
+*   **HTTPS Dev Certificate — Critical Rules:**
+
+    > [!CAUTION]
+    > Never call `dotnet dev-certs https --trust` or `dotnet dev-certs https --clean` in agent/sandboxed terminals.
+    > Both commands require UAC elevation. In Antigravity's sandboxed terminal, the UAC dialog is **invisible** — these commands silently hang forever.
+    > AI agents must **NEVER** call either command directly.
+
+    *   **Root Cause:** Trusting a cert in the Windows Root CA store requires UAC elevation. Visual Studio surfaces a GUI dialog for this. Antigravity/sandboxed terminals cannot display UAC dialogs, so the command silently hangs and never completes.
+    *   **First-Time Machine Setup:** The project includes `devcert-setup.bat` at the repository root. This script **self-elevates via UAC** and runs the cert trust in a proper elevated context. New developers run `devcert-setup.bat` manually **once** after cloning — that's all that's ever needed.
+    *   **Agent Workaround:** When HTTPS cert status is unknown or unavailable, agents fall back to HTTP (`http://localhost:5071`) automatically via the `--agent` flag.
+
+    > [!TIP]
+    > **The dev cert is hostname-bound, NOT port-bound.**
+    > The `CN=localhost` certificate issued by `devcert-setup.bat` covers the `localhost` **hostname** only.
+    > Port numbers are irrelevant to TLS certificate validation.
+    > Once `devcert-setup.bat` is run once on a machine, HTTPS works on **any port** — `7031`, `7099`, `7777`, `7888`, etc. —
+    > without needing to re-run any cert setup. Switching ports in `launchSettings.json` never requires a new certificate.
+
+
 *   **App Execution & Clickable URLs Rule:**
     *   **Paradigm-Specific Clickable Links:** Whenever the application has been debugged and launched successfully, include clickable Markdown links strictly for the main URL of the specific paradigm currently being worked on or debugged (e.g. [https://localhost:7031/app](https://localhost:7031/app) for Vue SPA, [https://localhost:7031/home](https://localhost:7031/home) for Razor MVC, [https://localhost:7031/manager](https://localhost:7031/manager) for Piranha CMS, or [https://localhost:7031/scalar/v1](https://localhost:7031/scalar/v1) for REST APIs), rather than listing sub-pages or all application URLs indiscriminately.
     *   **No Unsolicited Launching:** If you are not actively debugging a runtime issue, do **not** launch the application right away. Instead, offer to run/launch the app for the user and ask for their confirmation first.
